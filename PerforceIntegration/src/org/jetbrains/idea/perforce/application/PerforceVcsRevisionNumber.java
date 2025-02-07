@@ -16,11 +16,12 @@
 package org.jetbrains.idea.perforce.application;
 
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
-import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.idea.perforce.perforce.FStat;
 import org.jetbrains.idea.perforce.perforce.P4Revision;
+
+import java.util.Objects;
 
 public class PerforceVcsRevisionNumber implements VcsRevisionNumber {
   private final long myRevisionNumber;
@@ -39,8 +40,7 @@ public class PerforceVcsRevisionNumber implements VcsRevisionNumber {
     this(p4Revision.getRevisionNumber(), p4Revision.getChangeNumber(), p4Revision.isBranched(), p4Revision.getDepotPath());
   }
 
-  @Nullable
-  public static PerforceVcsRevisionNumber createFromFStat(FStat fstat) {
+  public static @Nullable PerforceVcsRevisionNumber createFromFStat(FStat fstat) {
     try {
       return new PerforceVcsRevisionNumber(java.lang.Long.parseLong(fstat.haveRev) , java.lang.Long.parseLong(fstat.headChange), false, fstat.depotFile);
     }
@@ -49,9 +49,8 @@ public class PerforceVcsRevisionNumber implements VcsRevisionNumber {
     }
   }
 
-  @NotNull
   @Override
-  public String asString() {
+  public @NotNull String asString() {
     return String.valueOf(myChangeNumber);
   }
 
@@ -66,8 +65,7 @@ public class PerforceVcsRevisionNumber implements VcsRevisionNumber {
     return 0;
   }
 
-  @NotNull
-  public String getDepotPath() {
+  public @NotNull String getDepotPath() {
     return myDepotPath;
   }
 
@@ -83,6 +81,7 @@ public class PerforceVcsRevisionNumber implements VcsRevisionNumber {
     return myBranched;
   }
 
+  @Override
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
@@ -94,6 +93,7 @@ public class PerforceVcsRevisionNumber implements VcsRevisionNumber {
 
   }
 
+  @Override
   public int hashCode() {
     int result;
     result = java.lang.Long.hashCode(myRevisionNumber);
@@ -104,6 +104,7 @@ public class PerforceVcsRevisionNumber implements VcsRevisionNumber {
     return result;
   }
 
+  @Override
   public String toString() {
     return java.lang.Long.toString(myChangeNumber);
   }

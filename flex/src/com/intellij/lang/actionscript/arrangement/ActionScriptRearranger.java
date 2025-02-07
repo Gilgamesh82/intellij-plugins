@@ -5,10 +5,10 @@ import com.intellij.icons.AllIcons;
 import com.intellij.javascript.flex.mxml.FlexCommonTypeNames;
 import com.intellij.lang.actionscript.psi.ActionScriptPsiImplUtil;
 import com.intellij.lang.javascript.JavaScriptBundle;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lang.javascript.arrangement.JSArrangementEntry;
 import com.intellij.lang.javascript.arrangement.JSElementArrangementEntry;
 import com.intellij.lang.javascript.arrangement.JSRearrangerBase;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.formatter.ActionScriptLanguageCodeStyleSettingsProvider;
 import com.intellij.lang.javascript.generation.ActionScriptGenerateEventHandler;
 import com.intellij.lang.javascript.psi.JSFunction;
@@ -114,7 +114,7 @@ public final class ActionScriptRearranger extends JSRearrangerBase {
       return -1;
     }
 
-    final CommonCodeStyleSettings commonSettings = settings.getCommonSettings(JavaScriptSupportLoader.ECMA_SCRIPT_L4);
+    final CommonCodeStyleSettings commonSettings = settings.getCommonSettings(FlexSupportLoader.ECMA_SCRIPT_L4);
     JSElementArrangementEntry targetEntry = ObjectUtils.tryCast(target, JSElementArrangementEntry.class);
     ArrangementSettingsToken type = targetEntry != null ? targetEntry.getType() : null;
     if (VAR.equals(type) || CONST.equals(type)) {

@@ -2,7 +2,7 @@
 package org.angular2.codeInsight.attributes
 
 import com.intellij.html.impl.providers.HtmlAttributeValueProvider
-import com.intellij.javascript.web.css.CssClassInJSLiteralOrIdentifierReferenceProvider.Companion.getClassesFromEmbeddedContent
+import com.intellij.javascript.webSymbols.css.CssClassListInJSLiteralInHtmlAttributeScope.Companion.getClassesFromEmbeddedContent
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiElement
 import com.intellij.psi.xml.XmlAttribute
@@ -76,16 +76,16 @@ class Angular2AttributeValueProvider : HtmlAttributeValueProvider() {
   companion object {
 
     @NonNls
-    const val NG_CLASS_ATTR = "ngClass"
+    const val NG_CLASS_ATTR: String = "ngClass"
 
     @NonNls
-    const val SRC_ATTR = "src"
+    const val SRC_ATTR: String = "src"
 
     @NonNls
-    const val IMG_TAG = "img"
+    const val IMG_TAG: String = "img"
 
     @NonNls
-    const val NG_SRC_ATTR = "ngSrc"
+    const val NG_SRC_ATTR: String = "ngSrc"
 
   }
 

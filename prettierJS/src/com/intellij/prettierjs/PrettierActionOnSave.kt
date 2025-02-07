@@ -3,7 +3,6 @@ package com.intellij.prettierjs
 
 import com.intellij.codeInsight.actions.onSave.FormatOnSaveOptions
 import com.intellij.ide.actionsOnSave.impl.ActionsOnSaveFileDocumentManagerListener
-import com.intellij.lang.javascript.linter.GlobPatternUtil
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.asContextElement
@@ -14,7 +13,6 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.prettierjs.ReformatWithPrettierAction.NOOP_ERROR_HANDLER
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.util.concurrency.annotations.RequiresReadLock
@@ -36,7 +34,7 @@ private class PrettierActionOnSave : ActionsOnSaveFileDocumentManagerListener.Do
     val prettierConfiguration = PrettierConfiguration.getInstance(project).takeIf { it.isRunOnSave } ?: return null
     val file = FileDocumentManager.getInstance().getFile(document) ?: return null
     val psiFile = PsiManager.getInstance(project).findFile(file) ?: return null
-    if (!ReformatWithPrettierAction.checkNodeAndPackage(psiFile, null, NOOP_ERROR_HANDLER)) return null
+    if (!PrettierUtil.checkNodeAndPackage(psiFile, null, PrettierUtil.NOOP_ERROR_HANDLER)) return null
 
     if (prettierConfiguration.isRunOnReformat) {
       val onSaveOptions = FormatOnSaveOptions.getInstance(project)
@@ -46,7 +44,7 @@ private class PrettierActionOnSave : ActionsOnSaveFileDocumentManagerListener.Do
       }
     }
 
-    if (!GlobPatternUtil.isFileMatchingGlobPattern(project, prettierConfiguration.filesPattern, file)) return null
+    if (!PrettierUtil.isFormattingAllowedForFile(project, file)) return null
 
     return file to psiFile
   }

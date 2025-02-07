@@ -1,9 +1,10 @@
 // Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.angular2.codeInsight
 
-import com.intellij.javascript.web.WebFrameworkTestModule
-import com.intellij.webSymbols.LookupElementInfo
-import com.intellij.webSymbols.enableIdempotenceChecksOnEveryCache
+import com.intellij.codeInsight.template.impl.TemplateManagerImpl
+import com.intellij.javascript.testFramework.web.WebFrameworkTestModule
+import com.intellij.webSymbols.testFramework.LookupElementInfo
+import com.intellij.webSymbols.testFramework.enableIdempotenceChecksOnEveryCache
 import org.angular2.Angular2TestCase
 import org.angular2.Angular2TestModule
 import org.angular2.Angular2TestModule.ANGULAR_CORE_13_3_5
@@ -89,7 +90,7 @@ class Angular2CompletionTest : Angular2TestCase("completion", true) {
 
   fun testTemplatesCompletion16() =
     doLookupTest(Angular2TestModule.ANGULAR_CORE_16_2_8, Angular2TestModule.ANGULAR_COMMON_16_2_8, extension = "html",
-                 configurators = listOf(Angular2TsConfigFile(strict = false )))
+                 configurators = listOf(Angular2TsConfigFile(strict = false)))
 
   fun testTemplatesCompletion16Strict() =
     doLookupTest(Angular2TestModule.ANGULAR_CORE_16_2_8, Angular2TestModule.ANGULAR_COMMON_16_2_8,
@@ -189,8 +190,14 @@ class Angular2CompletionTest : Angular2TestCase("completion", true) {
   fun testDeferBlockParameters() =
     doLookupTest(Angular2TestModule.ANGULAR_CORE_17_3_0, extension = "html")
 
+  fun testDeferBlockParametersNg19() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_19_0_0_NEXT_4, extension = "html")
+
   fun testDeferBlockPrefetchParameters() =
     doLookupTest(Angular2TestModule.ANGULAR_CORE_17_3_0, extension = "html")
+
+  fun testDeferBlockHydrateParameters() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_19_0_0_NEXT_4, extension = "html")
 
   fun testDeferBlockOnTriggers() =
     doLookupTest(Angular2TestModule.ANGULAR_CORE_17_3_0, extension = "html")
@@ -203,6 +210,99 @@ class Angular2CompletionTest : Angular2TestCase("completion", true) {
 
   fun testKeyofAttribute() =
     doLookupTest(Angular2TestModule.ANGULAR_CORE_17_3_0, configurators = listOf(Angular2TsConfigFile()))
+
+  fun testTsconfigPriority() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_17_3_0, extension = "html", dir = true, configureFileName = "src/component.html") {
+      it.priority >= 100
+    }
+
+  fun testStructuralDirectiveWithInjectedFields() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_17_3_0)
+
+  fun testLetBlockTemplate() {
+    TemplateManagerImpl.setTemplateTesting(testRootDisposable)
+    doTypingTest("le\nfoo\t12\n", Angular2TestModule.ANGULAR_CORE_18_2_1, extension = "html")
+  }
+
+  fun testLetBlockExpression() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_18_2_1, extension = "html") {
+      it.priority >= 100
+    }
+
+  fun testHostBindingJSProperty1() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_17_3_0, extension = "ts") {
+      it.lookupString.startsWith("ti")
+      || it.lookupString.startsWith("[s")
+      || it.lookupString.startsWith("(cl")
+    }
+
+  fun testHostBindingJSProperty2() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_17_3_0, extension = "ts")
+
+  fun testHostBindingCssClass1() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_17_3_0, extension = "ts")
+
+  fun testHostBindingCssClass2() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_17_3_0, extension = "ts")
+
+  fun testHostBindingDecorator1() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_17_3_0, extension = "ts")
+
+  fun testHostBindingDecorator2() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_17_3_0, extension = "ts")
+
+  fun testHostListenerDecorator() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_17_3_0, extension = "ts")
+
+  fun testObjectInitializerProperties() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_17_3_0, extension = "ts",
+                 locations = listOf("[product]=\"{<caret>}\"", "[product]=\"{title,<caret>}\""))
+
+  fun testViewChildrenDecorator() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_17_3_0, extension = "ts",
+                 locations = listOf("@ViewChild('<caret>area')", "@ViewChildren('<caret>area')"))
+
+  fun testViewChildrenDecoratorHtml() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_17_3_0, extension = "ts", dir = true,
+                 locations = listOf("@ViewChild('<caret>area')", "@ViewChildren('<caret>area')"))
+
+  fun testViewChildrenSignal() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_17_3_0, extension = "ts",
+                 locations = (1..6).map { "\"<caret>area$it\"" })
+
+  fun testTemplateBindingsNgIf() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_17_3_0, Angular2TestModule.ANGULAR_COMMON_17_3_0, extension = "ts",
+                 lookupItemFilter = { it.priority > 0 && it.lookupString != "Component" },
+                 locations = listOf(
+                   "<div *ngIf=\"<caret>true as foo; else foo as sss; let car = ngIf\"></div>",
+                   "<div *ngIf=\"true as <caret>foo; else foo as sss; let car = ngIf\"></div>",
+                   "<div *ngIf=\"true as foo; <caret>else foo as sss; let car = ngIf\"></div>",
+                   "<div *ngIf=\"true as foo; else <caret>foo as sss; let car = ngIf\"></div>",
+                   "<div *ngIf=\"true as foo; else foo as <caret>sss; let car = ngIf\"></div>",
+                   "<div *ngIf=\"true as foo; else foo as sss; <caret>let car = ngIf\"></div>",
+                   "<div *ngIf=\"true as foo; else foo as sss; let <caret>car = ngIf\"></div>",
+                   "<div *ngIf=\"true as foo; else foo as sss; let car = <caret>ngIf\"></div>",
+                 ))
+
+  fun testTemplateBindingsNgFor() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_17_3_0, Angular2TestModule.ANGULAR_COMMON_17_3_0, extension = "ts",
+                 lookupItemFilter = { it.priority > 0 && it.lookupString != "Component" },
+                 locations = listOf(
+                   "<div *ngFor=\"<caret>let foo of [1,2,3]; trackBy: trackByFn; let index = index\"></div>",
+                   "<div *ngFor=\"let <caret>foo of [1,2,3]; trackBy: trackByFn; let index = index\"></div>",
+                   "<div *ngFor=\"let foo <caret>of [1,2,3]; trackBy: trackByFn; let index = index\"></div>",
+                   "<div *ngFor=\"let foo of <caret>[1,2,3]; trackBy: trackByFn; let index = index\"></div>",
+                   "<div *ngFor=\"let foo of [1,2,3]; <caret>trackBy: trackByFn; let index = index\"></div>",
+                   "<div *ngFor=\"let foo of [1,2,3]; trackBy: <caret>trackByFn; let index = index\"></div>",
+                   "<div *ngFor=\"let foo of [1,2,3]; trackBy: trackByFn; <caret>let index = index\"></div>",
+                   "<div *ngFor=\"let foo of [1,2,3]; trackBy: trackByFn; let <caret>index = index\"></div>",
+                   "<div *ngFor=\"let foo of [1,2,3]; trackBy: trackByFn; let index = <caret>index\"></div>",
+                 ))
+
+  fun testTemplateBindingsNgForContextDocumentation() =
+    doLookupTest(Angular2TestModule.ANGULAR_CORE_18_2_1, Angular2TestModule.ANGULAR_COMMON_18_2_1, extension = "ts",
+                 lookupItemFilter = { it.lookupString == "index" || it.lookupString == "last" || it.lookupString == "ngForOf"},
+                 checkDocumentation = true)
 
   private fun notAnElement(it: LookupElementInfo): Boolean = !it.lookupString.startsWith("<")
 

@@ -6,8 +6,8 @@ import com.intellij.diagram.AbstractDiagramElementManager;
 import com.intellij.diagram.presentation.DiagramState;
 import com.intellij.javascript.flex.resolve.FlexResolveHelper;
 import com.intellij.lang.javascript.DialectDetector;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lang.javascript.flex.FlexBundle;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.flex.FlexUtils;
 import com.intellij.lang.javascript.presentable.JSFormatUtil;
 import com.intellij.lang.javascript.presentable.JSNamedElementPresenter;
@@ -55,7 +55,7 @@ public class FlashUmlElementManager extends AbstractDiagramElementManager<Object
   }
 
   public static boolean isAcceptableAsNodeStatic(Object element) {
-    if (element instanceof PsiFile && JavaScriptSupportLoader.isFlexMxmFile((PsiFile)element)) {
+    if (element instanceof PsiFile && FlexSupportLoader.isFlexMxmFile((PsiFile)element)) {
       return true;
     }
     if (element instanceof PsiDirectory directory) {
@@ -112,7 +112,7 @@ public class FlashUmlElementManager extends AbstractDiagramElementManager<Object
             return qualified;
           }
         }
-        if (enclosing instanceof XmlFile && JavaScriptSupportLoader.isFlexMxmFile((PsiFile)enclosing)) {
+        if (enclosing instanceof XmlFile && FlexSupportLoader.isFlexMxmFile((PsiFile)enclosing)) {
           return XmlBackedJSClassFactory.getXmlBackedClass((XmlFile)enclosing);
         }
       }
@@ -185,7 +185,7 @@ public class FlashUmlElementManager extends AbstractDiagramElementManager<Object
       //noinspection ConstantConditions
       return JSPsiImplUtils.findQualifiedElement((JSFile)element).getName();
     }
-    else if (element instanceof XmlFile && JavaScriptSupportLoader.isFlexMxmFile((PsiFile)element)) {
+    else if (element instanceof XmlFile && FlexSupportLoader.isFlexMxmFile((PsiFile)element)) {
       return ((XmlFile)element).getVirtualFile().getNameWithoutExtension();
     }
     else {
@@ -213,7 +213,7 @@ public class FlashUmlElementManager extends AbstractDiagramElementManager<Object
     else if (element instanceof JSFile) {
       return decorate(getElementTitle(element));
     }
-    else if (element instanceof XmlFile && JavaScriptSupportLoader.isFlexMxmFile((PsiFile)element)) {
+    else if (element instanceof XmlFile && FlexSupportLoader.isFlexMxmFile((PsiFile)element)) {
       return decorate(getElementTitle(element));
     }
     else if (element instanceof PsiDirectory directory) {
@@ -224,7 +224,7 @@ public class FlashUmlElementManager extends AbstractDiagramElementManager<Object
   }
 
   private static String getPackageDisplayName(String s) {
-    return s.length() > 0 ? s : FlexBundle.message("top.level");
+    return !s.isEmpty() ? s : FlexBundle.message("top.level");
   }
 
   private static SimpleColoredText decorate(String name) {

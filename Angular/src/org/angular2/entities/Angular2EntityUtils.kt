@@ -24,6 +24,7 @@ import org.angular2.entities.metadata.psi.Angular2MetadataEntity
 import org.angular2.entities.source.Angular2PropertyInfo
 import org.angular2.entities.source.Angular2SourceEntity
 import org.angular2.index.getFunctionNameFromIndex
+import org.angular2.lang.Angular2LangUtil
 import org.angular2.lang.selector.Angular2DirectiveSimpleSelector
 import org.angular2.lang.selector.Angular2DirectiveSimpleSelector.ParseException
 import org.jetbrains.annotations.NonNls
@@ -32,18 +33,18 @@ import kotlin.math.max
 object Angular2EntityUtils {
 
   @NonNls
-  const val ELEMENT_REF = "ElementRef"
+  const val ELEMENT_REF: String = "ElementRef"
 
   @NonNls
-  const val TEMPLATE_REF = "TemplateRef"
+  const val TEMPLATE_REF: String = "TemplateRef"
 
   @NonNls
-  const val VIEW_CONTAINER_REF = "ViewContainerRef"
+  const val VIEW_CONTAINER_REF: String = "ViewContainerRef"
 
-  const val NG_ACCEPT_INPUT_TYPE_PREFIX = "ngAcceptInputType_"
+  const val NG_ACCEPT_INPUT_TYPE_PREFIX: String = "ngAcceptInputType_"
 
   private const val INDEX_ELEMENT_NAME_PREFIX = ">"
-  const val anyElementDirectiveIndexName = "E"
+  const val anyElementDirectiveIndexName: String = "E"
   private const val INDEX_ATTRIBUTE_NAME_PREFIX = "="
 
   @JvmStatic
@@ -79,8 +80,10 @@ object Angular2EntityUtils {
   }
 
   @JvmStatic
-  fun getPropertyDeclarationOrReferenceKindAndDirective(context: PsiElement?,
-                                                        declaration: Boolean): PropertyDeclarationOrReferenceInfo? {
+  fun getPropertyDeclarationOrReferenceKindAndDirective(
+    context: PsiElement?,
+    declaration: Boolean,
+  ): PropertyDeclarationOrReferenceInfo? {
     val ownerProp = if (declaration) Angular2DecoratorUtil.ALIAS_PROP else Angular2DecoratorUtil.NAME_PROP
     val contextParent = context?.parent ?: return null
     val parent = contextParent.let { parent ->
@@ -315,8 +318,10 @@ object Angular2EntityUtils {
    * @see .forEachEntity
    */
   @JvmStatic
-  fun forEachModule(entities: Iterable<Angular2Entity>,
-                    moduleConsumer: (Angular2Module) -> Unit) {
+  fun forEachModule(
+    entities: Iterable<Angular2Entity>,
+    moduleConsumer: (Angular2Module) -> Unit,
+  ) {
     forEachEntity(entities, moduleConsumer) {}
   }
 
@@ -326,9 +331,11 @@ object Angular2EntityUtils {
    * @see .forEachModule
    */
   @JvmStatic
-  fun forEachEntity(entities: Iterable<Angular2Entity>,
-                    moduleConsumer: (Angular2Module) -> Unit,
-                    declarationConsumer: (Angular2Declaration) -> Unit) {
+  fun forEachEntity(
+    entities: Iterable<Angular2Entity>,
+    moduleConsumer: (Angular2Module) -> Unit,
+    declarationConsumer: (Angular2Declaration) -> Unit,
+  ) {
     entities.forEach { entity ->
       when (entity) {
         is Angular2Module -> moduleConsumer(entity)
@@ -336,6 +343,9 @@ object Angular2EntityUtils {
       }
     }
   }
+
+  fun isStandaloneDefault(context: PsiElement): Boolean =
+    Angular2LangUtil.isAtLeastAngularVersion(context, Angular2LangUtil.AngularVersion.V_19)
 
   fun jsTypeFromAcceptInputType(clz: TypeScriptClass?, name: String): JSType? =
     clz

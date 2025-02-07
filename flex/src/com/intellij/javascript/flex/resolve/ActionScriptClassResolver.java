@@ -2,7 +2,7 @@
 package com.intellij.javascript.flex.resolve;
 
 import com.intellij.lang.javascript.DialectOptionHolder;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.flex.JSResolveHelper;
 import com.intellij.lang.javascript.index.JSIndexedRootProvider;
 import com.intellij.lang.javascript.index.JavaScriptIndex;
@@ -123,7 +123,7 @@ public final class ActionScriptClassResolver extends JSClassResolver {
 
       if (link.equals(clazz.getQualifiedName())) {
         PsiFile file = clazz.getContainingFile();
-        if (!file.getLanguage().isKindOf(JavaScriptSupportLoader.ECMA_SCRIPT_L4)) continue;
+        if (!file.getLanguage().isKindOf(FlexSupportLoader.ECMA_SCRIPT_L4)) continue;
         VirtualFile vFile = file.getVirtualFile();
         if (clazzShouldBeTakenFromOurLibrary &&
             !JavaScriptIndex.ECMASCRIPT_JS2.equals(vFile.getName()) // object from swf do not contain necessary members!
@@ -169,7 +169,7 @@ public final class ActionScriptClassResolver extends JSClassResolver {
     PsiElement result = resultFromSourceContent != null ? resultFromSourceContent : resultFromLibraries;
     if (result == null) {
       String className = link.substring(link.lastIndexOf('.') + 1);
-      if (className.length() > 0 && !isBuiltInClassName(className) &&
+      if (!className.isEmpty() && !isBuiltInClassName(className) &&
           (Character.isLetter(className.charAt(0)) || '_' == className.charAt(0))) {
         // TODO optimization, remove when packages will be properly handled
         result = findClassByQNameViaHelper(link, project, className, searchScope);

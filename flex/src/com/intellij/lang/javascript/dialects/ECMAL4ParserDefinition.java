@@ -5,7 +5,7 @@ package com.intellij.lang.javascript.dialects;
 
 import com.intellij.lang.PsiBuilder;
 import com.intellij.lang.actionscript.parsing.ActionScriptParser;
-import com.intellij.lang.javascript.JSFileElementTypes;
+import com.intellij.lang.javascript.FlexFileElementTypes;
 import com.intellij.lang.javascript.JSFlexAdapter;
 import com.intellij.lang.javascript.JavascriptParserDefinition;
 import com.intellij.lang.javascript.parsing.JavaScriptParser;
@@ -23,11 +23,11 @@ public class ECMAL4ParserDefinition extends JavascriptParserDefinition {
 
   @Override
   public @NotNull IFileElementType getFileNodeType() {
-    return JSFileElementTypes.ECMA4_FILE;
+    return FlexFileElementTypes.ECMA4_FILE;
   }
 
   @Override
-  public @NotNull JavaScriptParser<?, ?, ?, ?> createJSParser(@NotNull PsiBuilder builder) {
+  public @NotNull JavaScriptParser createJSParser(@NotNull PsiBuilder builder) {
     return new ActionScriptParser(builder);
   }
 }

@@ -1,0 +1,89 @@
+### auto-generated section `build intellij.cfml` start
+load("@rules_jvm//:jvm.bzl", "jvm_library", "jvm_resources", "jvm_test")
+
+jvm_resources(
+  name = "cfml_resources",
+  files = glob(["resources/**/*"]),
+  strip_prefix = "resources"
+)
+
+jvm_resources(
+  name = "cfml_resources_1",
+  files = glob(["compatibilityResources/**/*"]),
+  strip_prefix = "compatibilityResources"
+)
+
+jvm_library(
+  name = "cfml",
+  module_name = "intellij.cfml",
+  visibility = ["//visibility:public"],
+  srcs = glob(["src/**/*.kt", "src/**/*.java", "gen/**/*.kt", "gen/**/*.java"], allow_empty = True),
+  deps = [
+    "@community//platform/platform-api:ide",
+    "@community//platform/platform-impl:ide-impl",
+    "@community//xml/impl",
+    "@community//platform/lang-api:lang",
+    "@community//platform/lang-impl",
+    "@community//java/openapi:java",
+    "@community//java/java-impl:impl",
+    "@community//platform/smRunner",
+    "@community//spellchecker",
+    "@community//platform/core-ui",
+    "@community//platform/editor-ui-ex:editor-ex",
+    "@community//platform/code-style-impl:codeStyle-impl",
+    "@community//platform/platform-util-io:ide-util-io",
+    "@community//platform/util/jdom",
+  ],
+  runtime_deps = [
+    ":cfml_resources",
+    ":cfml_resources_1",
+    "//ultimate/platform-ultimate:commercial",
+    "//plugins/javaee/web/coverage:javaee-web-coverage",
+  ]
+)
+
+jvm_library(
+  name = "cfml_test_lib",
+  visibility = ["//visibility:public"],
+  srcs = glob(["tests/**/*.kt", "tests/**/*.java"], allow_empty = True),
+  associates = [":cfml"],
+  deps = [
+    "@community//platform/platform-api:ide",
+    "//dbe/sql:database-sql-impl",
+    "@community//platform/platform-impl:ide-impl",
+    "@community//platform/platform-impl:ide-impl_test_lib",
+    "@community//xml/impl",
+    "@community//platform/lang-api:lang",
+    "@community//platform/lang-impl",
+    "@lib//:assert_j",
+    "@community//java/openapi:java",
+    "@community//java/java-impl:impl",
+    "@community//java/testFramework",
+    "@community//platform/smRunner",
+    "@community//platform/smRunner:smRunner_test_lib",
+    "@community//java/java-runtime:rt",
+    "//dbe/database/impl",
+    "//idea-tests:ultimate-tests_test_lib",
+    "@community//spellchecker",
+    "@community//spellchecker:spellchecker_test_lib",
+    "@community//platform/testFramework/extensions:testExtensions",
+    "@community//platform/testFramework",
+    "@community//platform/testFramework:testFramework_test_lib",
+    "@lib//:kotlin-test",
+    "@community//platform/core-ui",
+    "@community//platform/editor-ui-ex:editor-ex",
+    "@community//platform/code-style-impl:codeStyle-impl",
+    "@community//platform/platform-util-io:ide-util-io",
+    "@community//platform/util/jdom",
+  ],
+  runtime_deps = [
+    ":cfml_resources",
+    ":cfml_resources_1",
+  ]
+)
+
+jvm_test(
+  name = "cfml_test",
+  runtime_deps = [":cfml_test_lib"]
+)
+### auto-generated section `build intellij.cfml` end

@@ -1,4 +1,4 @@
-// Copyright 2000-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.plugins.cucumber.java.run;
 
 import com.intellij.execution.JavaExecutionUtil;
@@ -61,14 +61,12 @@ public abstract class CucumberJavaRunConfigurationProducer extends JavaRunConfig
   public static final Set<String> CONFIGURATION_ANNOTATION_NAMES = ContainerUtil.newHashSet("io.cucumber.spring.CucumberContextConfiguration",
                                                                                             "io.cucumber.spring.ScenarioScope");
 
-  @NotNull
   @Override
-  public ConfigurationFactory getConfigurationFactory() {
+  public @NotNull ConfigurationFactory getConfigurationFactory() {
     return CucumberJavaRunConfigurationType.getInstance().getConfigurationFactories()[0];
   }
 
-  @Nullable
-  protected abstract CucumberGlueProvider getGlueProvider(@NotNull final PsiElement element);
+  protected abstract @Nullable CucumberGlueProvider getGlueProvider(final @NotNull PsiElement element);
 
   protected abstract String getConfigurationName(@NotNull ConfigurationContext context);
 
@@ -76,8 +74,7 @@ public abstract class CucumberJavaRunConfigurationProducer extends JavaRunConfig
     return "";
   }
 
-  @Nullable
-  protected abstract VirtualFile getFileToRun(ConfigurationContext context);
+  protected abstract @Nullable VirtualFile getFileToRun(ConfigurationContext context);
 
   @Override
   protected boolean setupConfigurationFromContext(@NotNull CucumberJavaRunConfiguration configuration,
@@ -135,7 +132,7 @@ public abstract class CucumberJavaRunConfigurationProducer extends JavaRunConfig
       configuration.setProgramParameters(getSMFormatterOptions(configuration.getCucumberCoreVersion()));
     }
 
-    if (configuration.getNameFilter() != null && configuration.getNameFilter().length() > 0) {
+    if (configuration.getNameFilter() != null && !configuration.getNameFilter().isEmpty()) {
       final String newProgramParameters = configuration.getProgramParameters() + " --name \"" + configuration.getNameFilter() + "\"";
       configuration.setProgramParameters(newProgramParameters);
     }
@@ -180,8 +177,7 @@ public abstract class CucumberJavaRunConfigurationProducer extends JavaRunConfig
     return true;
   }
 
-  @NotNull
-  private static String getSMFormatterOptions(@NotNull String cucumberCoreVersion) {
+  private static @NotNull String getSMFormatterOptions(@NotNull String cucumberCoreVersion) {
     if (VersionComparatorUtil.compare(cucumberCoreVersion, CUCUMBER_CORE_VERSION_5) >= 0) {
       return FORMATTER_OPTIONS_5;
     }

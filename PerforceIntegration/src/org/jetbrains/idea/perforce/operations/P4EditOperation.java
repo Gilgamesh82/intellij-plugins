@@ -12,8 +12,8 @@ import com.intellij.openapi.vcs.changes.*;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ProcessingContext;
 import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.idea.perforce.PerforceBundle;
-import org.jetbrains.idea.perforce.application.PerforceBaseInfoWorker;
 import org.jetbrains.idea.perforce.application.PerforceVcs;
 import org.jetbrains.idea.perforce.perforce.FStat;
 import org.jetbrains.idea.perforce.perforce.P4File;
@@ -23,16 +23,24 @@ import org.jetbrains.idea.perforce.perforce.PerforceRunner;
 
 public class P4EditOperation extends VcsOperationOnPath {
   private static final Logger LOG = Logger.getInstance(P4EditOperation.class);
-  @NonNls private static final String CANNOT_FIND_ERROR = "the system cannot find";
-  @NonNls private static final String CANNOT_FIND_ERROR_2 = "no such file or directory";
+  private static final @NonNls String CANNOT_FIND_ERROR = "the system cannot find";
+  private static final @NonNls String CANNOT_FIND_ERROR_2 = "no such file or directory";
   private boolean mySuppressErrors;
+
+  private boolean myNeedPathRefresh;
 
   @SuppressWarnings("unused") // used by deserialization reflection
   public P4EditOperation() {
+    myNeedPathRefresh = true;
   }
 
-  public P4EditOperation(String changeList, final VirtualFile file) {
+  public P4EditOperation(String changeList, @NotNull VirtualFile file) {
+    this(changeList, file, true);
+  }
+
+  public P4EditOperation(@NotNull String changeList, @NotNull VirtualFile file, boolean needPathRefresh) {
     super(changeList, file.getPath());
+    myNeedPathRefresh = needPathRefresh;
   }
 
   public P4EditOperation(String changeList, final String path) {
@@ -100,18 +108,18 @@ public class P4EditOperation extends VcsOperationOnPath {
         }
       }
     } finally {
-      VirtualFile vFile = getFilePath().getVirtualFile();
-      if (vFile != null) {
-        vFile.refresh(true, false);
-        vcs.asyncEditCompleted(vFile);
+      if (myNeedPathRefresh) {
+        VirtualFile vFile = getFilePath().getVirtualFile();
+        if (vFile != null) {
+          vFile.refresh(true, false);
+          vcs.asyncEditCompleted(vFile);
+        }
       }
     }
-    final FilePath filePath = getFilePath();
-    ApplicationManager.getApplication().runReadAction(() -> {
-      if (!project.isDisposed()) {
-        VcsDirtyScopeManager.getInstance(project).fileDirty(filePath);
-      }
-    });
+    if (myNeedPathRefresh) {
+      final FilePath filePath = getFilePath();
+      VcsDirtyScopeManager.getInstance(project).fileDirty(filePath);
+    }
   }
 
   @Override

@@ -5,7 +5,7 @@ import com.intellij.lang.javascript.JSTokenTypes
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.tree.TokenSet
 
-interface Angular2TokenTypes : JSTokenTypes {
+interface Angular2TokenTypes {
   companion object {
     @JvmField
     val ESCAPE_SEQUENCE: IElementType = Angular2TokenType("NG:ESCAPE_SEQUENCE")
@@ -20,12 +20,15 @@ interface Angular2TokenTypes : JSTokenTypes {
     val BLOCK_PARAMETER_NAME: IElementType = Angular2TokenType("NG:BLOCK_PARAMETER_NAME")
 
     @JvmField
-    val KEYWORDS = TokenSet.create(JSTokenTypes.VAR_KEYWORD, JSTokenTypes.LET_KEYWORD, JSTokenTypes.AS_KEYWORD, JSTokenTypes.NULL_KEYWORD,
-                                   JSTokenTypes.UNDEFINED_KEYWORD, JSTokenTypes.TRUE_KEYWORD, JSTokenTypes.FALSE_KEYWORD,
-                                   JSTokenTypes.IF_KEYWORD,
-                                   JSTokenTypes.ELSE_KEYWORD, JSTokenTypes.THIS_KEYWORD, BLOCK_PARAMETER_NAME)
+    val BLOCK_PARAMETER_PREFIX: IElementType = Angular2TokenType("NG:BLOCK_PARAMETER_PREFIX")
 
     @JvmField
-    val STRING_PART_SPECIAL_SEQ = TokenSet.create(ESCAPE_SEQUENCE, INVALID_ESCAPE_SEQUENCE, XML_CHAR_ENTITY_REF)
+    val KEYWORDS: TokenSet = TokenSet.create(JSTokenTypes.VAR_KEYWORD, JSTokenTypes.LET_KEYWORD, JSTokenTypes.AS_KEYWORD, JSTokenTypes.NULL_KEYWORD,
+                                             JSTokenTypes.UNDEFINED_KEYWORD, JSTokenTypes.TRUE_KEYWORD, JSTokenTypes.FALSE_KEYWORD,
+                                             JSTokenTypes.IF_KEYWORD,
+                                             JSTokenTypes.ELSE_KEYWORD, JSTokenTypes.THIS_KEYWORD, BLOCK_PARAMETER_NAME)
+
+    @JvmField
+    val STRING_PART_SPECIAL_SEQ: TokenSet = TokenSet.create(ESCAPE_SEQUENCE, INVALID_ESCAPE_SEQUENCE, XML_CHAR_ENTITY_REF)
   }
 }

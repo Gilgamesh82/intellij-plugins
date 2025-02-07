@@ -2,8 +2,8 @@
 package com.intellij.javascript.flex.mxml.schema;
 
 import com.intellij.lang.ASTNode;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lang.javascript.flex.AnnotationBackedDescriptor;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.psi.JSFile;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.util.Comparing;
@@ -136,7 +136,7 @@ public class MxmlTagNameReference extends TagNameReference {
       }
     }
     */
-    if (element instanceof JSFile || (element instanceof XmlFile && JavaScriptSupportLoader.isMxmlOrFxgFile((XmlFile)element))) {
+    if (element instanceof JSFile || (element instanceof XmlFile && FlexSupportLoader.isMxmlOrFxgFile((XmlFile)element))) {
       final VirtualFile virtualFile = ((PsiFile)element).getVirtualFile();
       if (virtualFile != null) {
         final VirtualFile sourceRoot =
@@ -165,7 +165,7 @@ public class MxmlTagNameReference extends TagNameReference {
       }
     }
 
-    final @NonNls String qname = "xmlns" + (prefix.length() > 0 ? ":" + prefix : "");
+    final @NonNls String qname = "xmlns" + (!prefix.isEmpty() ? ":" + prefix : "");
     final XmlAttribute attribute = XmlElementFactory.getInstance(tag.getProject()).createXmlAttribute(qname, namespace);
     if (anchor == null) {
       tag.add(attribute);

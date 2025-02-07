@@ -4,11 +4,12 @@ package org.angular2.css
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.testFramework.UsefulTestCase
 import com.intellij.util.containers.ContainerUtil
-import com.intellij.webSymbols.moveToOffsetBySignature
-import com.intellij.webSymbols.resolveReference
+import com.intellij.webSymbols.testFramework.moveToOffsetBySignature
+import com.intellij.webSymbols.testFramework.resolveReference
+import com.intellij.webSymbols.testFramework.resolveWebSymbolReference
 import org.angular2.Angular2CodeInsightFixtureTestCase
 import org.angular2.Angular2TestModule
-import org.angular2.Angular2TestModule.Companion.configureLink
+import org.angular2.Angular2TestModule.Companion.configureDependencies
 import org.angular2.Angular2TestUtil
 
 class Angular2CssClassTest : Angular2CodeInsightFixtureTestCase() {
@@ -121,17 +122,17 @@ class Angular2CssClassTest : Angular2CodeInsightFixtureTestCase() {
   fun testNgClassReferences() {
     myFixture.configureByFiles("ngClass.html", "ngClass.css", "package.json")
     for (prefix in mutableListOf("{", "[", "")) {
-      myFixture.resolveReference("=\"$prefix'fo<caret>o b")
-      myFixture.resolveReference("=\"$prefix'foo b<caret>ar")
-      Angular2TestUtil.assertUnresolvedReference("=\"$prefix'f<caret>oo1 ", myFixture)
-      Angular2TestUtil.assertUnresolvedReference("=\"$prefix'foo1 b<caret>", myFixture)
+      myFixture.resolveWebSymbolReference("=\"$prefix'fo<caret>o b")
+      myFixture.resolveWebSymbolReference("=\"$prefix'foo b<caret>ar")
+      Angular2TestUtil.assertUnresolvedReference("=\"$prefix'f<caret>oo1 ", myFixture, true, true)
+      Angular2TestUtil.assertUnresolvedReference("=\"$prefix'foo1 b<caret>", myFixture, true, true)
     }
-    myFixture.resolveReference(", b<caret>ar: true}\"")
-    Angular2TestUtil.assertUnresolvedReference(", f<caret>oo1: true}\"", myFixture)
+    myFixture.resolveWebSymbolReference(", b<caret>ar: true}\"")
+    Angular2TestUtil.assertUnresolvedReference(", f<caret>oo1: true}\"", myFixture, true, true)
   }
 
   fun testBoundClassCodeCompletion() {
-    configureLink(myFixture, Angular2TestModule.ANGULAR_COMMON_4_0_0)
+    myFixture.configureDependencies(Angular2TestModule.ANGULAR_COMMON_4_0_0)
     myFixture.configureByFiles("complex.html", "complex.ts", "complex-global.css", "complex-internal.css",
                                "complex-cli.css", "complex-cli-index.html", "complex-cli-index.css",
                                "angular.json")
@@ -153,7 +154,7 @@ class Angular2CssClassTest : Angular2CodeInsightFixtureTestCase() {
   }
 
   fun testBoundClassCodeCompletionCanonical() {
-    configureLink(myFixture, Angular2TestModule.ANGULAR_COMMON_4_0_0)
+    myFixture.configureDependencies(Angular2TestModule.ANGULAR_COMMON_4_0_0)
     myFixture.configureByFiles("complex.html", "complex.ts", "complex-global.css", "complex-internal.css",
                                "complex-cli.css", "complex-cli-index.html", "complex-cli-index.css",
                                "angular.json")
@@ -177,7 +178,7 @@ class Angular2CssClassTest : Angular2CodeInsightFixtureTestCase() {
   }
 
   fun testClassCodeCompletionRun() {
-    configureLink(myFixture, Angular2TestModule.ANGULAR_COMMON_15_1_5)
+    myFixture.configureDependencies(Angular2TestModule.ANGULAR_COMMON_15_1_5)
     myFixture.configureByFiles("complex.html", "complex.ts", "complex-global.css", "complex-internal.css",
                                "complex-cli.css", "complex-cli-index.html", "complex-cli-index.css",
                                "angular.json")
@@ -206,12 +207,11 @@ class Angular2CssClassTest : Angular2CodeInsightFixtureTestCase() {
                  ContainerUtil.sorted(myFixture.getLookupElementStrings()!!))
     myFixture.type("cli\n")
     PsiDocumentManager.getInstance(project).commitAllDocuments()
-    assertEquals(Angular2TestUtil.findOffsetBySignature("'cli-class'<caret>", myFixture.getFile()),
+    assertEquals(Angular2TestUtil.findOffsetBySignature("'cli-class<caret>'", myFixture.getFile()),
                  myFixture.getCaretOffset())
-    myFixture.type(": true, ")
+    myFixture.type("': true, ")
     myFixture.completeBasic()
     UsefulTestCase.assertSameElements(myFixture.getLookupElementStrings()!!,
-                                      "cli-class",  //TODO: remove - CSS reference actually does not filter already present class names, though it should
                                       "inline-class",
                                       "internal-class",
                                       "ext-html-class",

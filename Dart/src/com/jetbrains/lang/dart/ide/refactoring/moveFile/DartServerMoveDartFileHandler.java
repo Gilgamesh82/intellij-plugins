@@ -1,4 +1,4 @@
-// Copyright 2000-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.jetbrains.lang.dart.ide.refactoring.moveFile;
 
 import com.intellij.openapi.application.ApplicationManager;
@@ -23,6 +23,7 @@ import com.jetbrains.lang.dart.sdk.DartSdk;
 import org.dartlang.analysis.server.protocol.SourceChange;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
 import java.util.Map;
@@ -87,13 +88,12 @@ public final class DartServerMoveDartFileHandler extends MoveFileHandler {
   }
 
   @Override
-  @Nullable
-  public List<UsageInfo> findUsages(PsiFile psiFile, PsiDirectory newParent, boolean searchInComments, boolean searchInNonJavaFiles) {
+  public @Nullable @Unmodifiable List<UsageInfo> findUsages(@NotNull PsiFile psiFile, @NotNull PsiDirectory newParent, boolean searchInComments, boolean searchInNonJavaFiles) {
     return null;
   }
 
   @Override
-  public void retargetUsages(List<UsageInfo> usageInfos, Map<PsiElement, PsiElement> oldToNewMap) {
+  public void retargetUsages(@Unmodifiable @NotNull List<? extends UsageInfo> usageInfos, @NotNull Map<PsiElement, PsiElement> oldToNewMap) {
   }
 
   @Override
@@ -102,7 +102,7 @@ public final class DartServerMoveDartFileHandler extends MoveFileHandler {
     // the Dart Analysis Server would now be pointing to incorrect file paths if we tried to use them at this point.
   }
 
-  private static void showMoveFileExceptionDialog(@NotNull final Project project, @NotNull @NlsContexts.DialogMessage String message) {
+  private static void showMoveFileExceptionDialog(final @NotNull Project project, @NotNull @NlsContexts.DialogMessage String message) {
     ApplicationManager.getApplication()
       .invokeLater(() -> Messages.showErrorDialog(project, message, DartBundle.message("dart.refactoring.move.file.dialog.title")));
   }

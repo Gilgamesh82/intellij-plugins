@@ -3,31 +3,36 @@ package org.intellij.terraform.config.codeinsight
 
 import com.intellij.codeInsight.completion.CompletionParameters
 import com.intellij.codeInsight.completion.CompletionUtilCore
+import com.intellij.codeInsight.completion.util.ParenthesesInsertHandler
 import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.codeInsight.lookup.LookupElementBuilder
 import com.intellij.codeInsight.lookup.LookupElementPresentation
 import com.intellij.codeInsight.lookup.LookupElementRenderer
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.util.NlsSafe
+import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiElement
 import com.intellij.psi.impl.DebugUtil
+import org.intellij.terraform.TerraformIcons
+import org.intellij.terraform.config.TerraformFileType
 import org.intellij.terraform.config.model.*
-import org.intellij.terraform.config.model.Function
 import org.intellij.terraform.hcl.HCLElementTypes
 import org.intellij.terraform.hcl.HCLTokenTypes
+import org.intellij.terraform.hcl.Icons
 import org.intellij.terraform.hcl.psi.HCLIdentifier
 import org.intellij.terraform.hcl.psi.HCLObject
 import org.intellij.terraform.hcl.psi.HCLPsiUtil
 import org.intellij.terraform.hcl.psi.HCLStringLiteral
-import org.intellij.terraform.hil.codeinsight.FunctionInsertHandler
 import org.intellij.terraform.hil.codeinsight.ScopeSelectInsertHandler
-import org.intellij.terraform.nullize
+import org.intellij.terraform.opentofu.OpenTofuConstants.OpenTofuScopes
+import org.intellij.terraform.opentofu.OpenTofuFileType
 import java.util.*
+import javax.swing.Icon
 
 object TerraformCompletionUtil {
-  val Scopes: Set<String> = setOf("data", "var", "self", "path", "count", "terraform", "local", "module")
-  val GlobalScopes: SortedSet<String> = sortedSetOf("var", "path", "data", "module", "local")
-  val RootBlockKeywords: Set<String> = TypeModel.RootBlocks.map(BlockType::literal).toHashSet()
+  val Scopes: Set<String> = setOf("data", "var", "self", "path", "count", "terraform", "local", "module") + OpenTofuScopes
+  val GlobalScopes: SortedSet<String> = (setOf("var", "path", "data", "module", "local") + OpenTofuScopes).toSortedSet()
+  val RootBlockKeywords: Set<String> = TypeModel.RootBlocksMap.keys
   val RootBlockSorted: List<BlockType> = TypeModel.RootBlocks.sortedBy { it.literal }
 
   fun createPropertyOrBlockType(value: PropertyOrBlockType, lookupString: String? = null, psiElement: PsiElement? = null): LookupElementBuilder {
@@ -55,15 +60,11 @@ object TerraformCompletionUtil {
       }
     })
 
-  fun createFunction(function: Function): LookupElementBuilder = LookupElementBuilder.create(function.name)
-    .withInsertHandler(FunctionInsertHandler)
-    .withRenderer(
-      object : LookupElementRenderer<LookupElement?>() {
-        override fun renderElement(element: LookupElement?, presentation: LookupElementPresentation?) {
-          presentation?.icon = AllIcons.Nodes.Method // or Function
-          presentation?.itemText = element?.lookupString
-        }
-      })
+  fun createFunction(function: TfFunction): LookupElementBuilder = LookupElementBuilder.create(function.presentableName)
+    .withInsertHandler(if (function.arguments.isEmpty()) ParenthesesInsertHandler.NO_PARAMETERS else ParenthesesInsertHandler.WITH_PARAMETERS)
+    .withTailText(function.getArgumentsAsText())
+    .withTypeText(function.returnType.presentableText)
+    .withIcon(AllIcons.Nodes.Function)
 
   fun dumpPsiFileModel(element: PsiElement): () -> String = { DebugUtil.psiToString(element.containingFile, true) }
 
@@ -85,7 +86,7 @@ object TerraformCompletionUtil {
     val position = parameters.position
     val text = getClearTextValue(position) ?: position.text
     if (text == CompletionUtilCore.DUMMY_IDENTIFIER_TRIMMED) return null
-    return text.replace(CompletionUtilCore.DUMMY_IDENTIFIER_TRIMMED, "").nullize(true)
+    return StringUtil.nullize(text.replace(CompletionUtilCore.DUMMY_IDENTIFIER_TRIMMED, ""), true)
   }
 
   @NlsSafe
@@ -124,4 +125,13 @@ object TerraformCompletionUtil {
       }
     }
   }
+
+  internal fun getLookupIcon(element: PsiElement): Icon {
+    return when (element.containingFile.fileType) {
+      is TerraformFileType -> {TerraformIcons.Terraform}
+      is OpenTofuFileType -> {TerraformIcons.Opentofu}
+      else -> Icons.FileTypes.HCL
+    }
+  }
+
 }

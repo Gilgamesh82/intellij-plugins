@@ -16,8 +16,10 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonShortcuts
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.Presentation
+import com.intellij.openapi.application.WriteIntentReadAction
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.progress.currentThreadCoroutineScope
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.NlsContexts.TabTitle
@@ -29,6 +31,8 @@ import com.jetbrains.cidr.cpp.embedded.platformio.project.LOG
 import com.jetbrains.cidr.cpp.embedded.platformio.refreshProject
 import com.jetbrains.cidr.execution.CidrPathConsoleFilter
 import com.jetbrains.cidr.system.LocalHost.TerminalEmulatorOSProcessHandler
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.awt.BorderLayout
 import java.nio.file.Path
 import javax.swing.JPanel
@@ -71,7 +75,11 @@ fun doRun(service: PlatformioService,
       Presentation.NULL_STRING, AllIcons.Actions.Suspend) {
       override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.EDT
 
-      override fun actionPerformed(e: AnActionEvent) = processHandler.destroyProcess()
+      override fun actionPerformed(e: AnActionEvent) {
+        currentThreadCoroutineScope().launch(Dispatchers.IO) {
+          processHandler.destroyProcess()
+        }
+      }
 
       override fun update(e: AnActionEvent) {
         if (processHandler.isProcessTerminated) {
@@ -125,7 +133,9 @@ fun doRun(service: PlatformioService,
 
     RunContentManager.getInstance(project).showRunContent(executor, descriptor)
 
-    FileDocumentManager.getInstance().saveAllDocuments()
+    WriteIntentReadAction.run {
+      FileDocumentManager.getInstance().saveAllDocuments()
+    }
 
     console.attachToProcess(processHandler)
 

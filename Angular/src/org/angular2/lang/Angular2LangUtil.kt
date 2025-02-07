@@ -21,6 +21,18 @@ object Angular2LangUtil {
   const val EVENT_EMITTER: String = "EventEmitter"
   const val OUTPUT_CHANGE_SUFFIX: String = "Change"
 
+  enum class AngularVersion {
+    V_2, V_10, V_16, V_17, V_18, V_19,
+  }
+
+  @JvmStatic
+  fun isAtLeastAngularVersion(context: PsiElement, version: AngularVersion): Boolean {
+    WebSymbolsContext.get("angular-version", context )
+      ?.let { AngularVersion.valueOf(it) }
+      ?.let { return it.ordinal >= version.ordinal }
+    return version == AngularVersion.V_2
+  }
+
   @JvmStatic
   fun isAngular2Context(context: PsiElement): Boolean {
     return angular2Framework.isInContext(context)
@@ -44,10 +56,10 @@ object Angular2LangUtil {
     return angular2Framework.isInContext(context, project)
   }
 
-  fun isAngular2HtmlFileType(fileType: FileType?) =
+  fun isAngular2HtmlFileType(fileType: FileType?): Boolean =
     fileType is LanguageFileType && fileType.language.let { it is Angular2HtmlDialect && !it.svgDialect }
 
-  fun isAngular2SvgFileType(fileType: FileType?) =
+  fun isAngular2SvgFileType(fileType: FileType?): Boolean =
     fileType is LanguageFileType && fileType.language.let { it is Angular2HtmlDialect && it.svgDialect }
 
   private fun getTemplateSyntax(contextProvider: () -> String?): Angular2TemplateSyntax =

@@ -1,4 +1,4 @@
-// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.javascript.karma.execution;
 
 import com.intellij.execution.Location;
@@ -15,7 +15,8 @@ import com.intellij.javascript.testFramework.util.JsTestFqn;
 import com.intellij.lang.javascript.psi.JSFile;
 import com.intellij.lang.javascript.psi.JSTestFileType;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VfsUtil;
+import com.intellij.openapi.util.io.NioFiles;
+import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
@@ -25,7 +26,7 @@ import com.intellij.util.containers.ContainerUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.List;
 
 public class KarmaTestLocationProvider implements SMTestLocator {
@@ -35,9 +36,8 @@ public class KarmaTestLocationProvider implements SMTestLocator {
 
   public static final KarmaTestLocationProvider INSTANCE = new KarmaTestLocationProvider();
 
-  @NotNull
   @Override
-  public List<Location> getLocation(@NotNull String protocol, @NotNull String path, @NotNull Project project, @NotNull GlobalSearchScope scope) {
+  public @NotNull List<Location> getLocation(@NotNull String protocol, @NotNull String path, @NotNull Project project, @NotNull GlobalSearchScope scope) {
     final Location<?> location = switch (protocol) {
       case PROTOCOL_ID__CONFIG_FILE -> getConfigLocation(project, path);
       case PROTOCOL_ID__TEST_SUITE -> getTestLocation(project, path, true);
@@ -47,9 +47,9 @@ public class KarmaTestLocationProvider implements SMTestLocator {
     return ContainerUtil.createMaybeSingletonList(location);
   }
 
-  @Nullable
-  private static Location<PsiFile> getConfigLocation(Project project, @NotNull String locationData) {
-    VirtualFile virtualFile = VfsUtil.findFileByIoFile(new File(locationData), false);
+  private static @Nullable Location<PsiFile> getConfigLocation(Project project, @NotNull String locationData) {
+    Path location = NioFiles.toPath(locationData);
+    VirtualFile virtualFile = location != null ? LocalFileSystem.getInstance().findFileByNioFile(location) : null;
     if (virtualFile != null && virtualFile.isValid()) {
       PsiFile psiFile = PsiManager.getInstance(project).findFile(virtualFile);
       if (psiFile != null && psiFile.isValid()) {
@@ -59,8 +59,7 @@ public class KarmaTestLocationProvider implements SMTestLocator {
     return null;
   }
 
-  @Nullable
-  private static Location getTestLocation(Project project, @NotNull String locationData, boolean isSuite) {
+  private static @Nullable Location getTestLocation(Project project, @NotNull String locationData, boolean isSuite) {
     List<String> path = EscapeUtils.split(locationData, '.');
     if (path.isEmpty()) {
       return null;
@@ -78,7 +77,7 @@ public class KarmaTestLocationProvider implements SMTestLocator {
     PsiElement psiElement = findJasmineElement(project, suiteNames, testName);
     if (psiElement == null) {
       String moduleName = null;
-      if (suiteNames.size() == 0) {
+      if (suiteNames.isEmpty()) {
         moduleName = DefaultQUnitModuleStructure.NAME;
       }
       else if (suiteNames.size() == 1) {
@@ -94,8 +93,7 @@ public class KarmaTestLocationProvider implements SMTestLocator {
     return null;
   }
 
-  @Nullable
-  private static PsiElement findJasmineElement(Project project, @NotNull List<String> suiteNames, @Nullable String testName) {
+  private static @Nullable PsiElement findJasmineElement(Project project, @NotNull List<String> suiteNames, @Nullable String testName) {
     String key = JsTestFileByTestNameIndex.createJasmineKey(suiteNames);
     GlobalSearchScope scope = GlobalSearchScope.projectScope(project);
     List<VirtualFile> jsTestVirtualFiles = JsTestFileByTestNameIndex.findFilesByKey(key, scope);
@@ -115,8 +113,7 @@ public class KarmaTestLocationProvider implements SMTestLocator {
     return null;
   }
 
-  @Nullable
-  private static PsiElement findQUnitElement(Project project, @NotNull String moduleName, @Nullable String testName) {
+  private static @Nullable PsiElement findQUnitElement(Project project, @NotNull String moduleName, @Nullable String testName) {
     String key = JsTestFileByTestNameIndex.createQUnitKey(moduleName, testName);
     GlobalSearchScope scope = GlobalSearchScope.projectScope(project);
     List<VirtualFile> jsTestVirtualFiles = JsTestFileByTestNameIndex.findFilesByKey(key, scope);

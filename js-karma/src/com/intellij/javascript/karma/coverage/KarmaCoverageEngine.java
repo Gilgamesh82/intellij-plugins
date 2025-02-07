@@ -1,4 +1,4 @@
-// Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.javascript.karma.coverage;
 
 import com.intellij.coverage.*;
@@ -15,7 +15,7 @@ import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.roots.ProjectFileIndex;
-import com.intellij.openapi.vfs.VfsUtil;
+import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiFile;
@@ -32,8 +32,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-public class KarmaCoverageEngine extends CoverageEngine {
-
+public final class KarmaCoverageEngine extends CoverageEngine {
   public static final String ID = "KarmaJavaScriptTestRunnerCoverage";
 
   @Override
@@ -41,9 +40,8 @@ public class KarmaCoverageEngine extends CoverageEngine {
     return WrappingRunConfiguration.unwrapRunProfile(configuration) instanceof KarmaRunConfiguration;
   }
 
-  @NotNull
   @Override
-  public CoverageEnabledConfiguration createCoverageEnabledConfiguration(@NotNull RunConfigurationBase configuration) {
+  public @NotNull CoverageEnabledConfiguration createCoverageEnabledConfiguration(@NotNull RunConfigurationBase configuration) {
     return new KarmaCoverageEnabledConfiguration(configuration);
   }
 
@@ -78,9 +76,8 @@ public class KarmaCoverageEngine extends CoverageEngine {
     return new KarmaCoverageSuite(this);
   }
 
-  @NotNull
   @Override
-  public CoverageAnnotator getCoverageAnnotator(@NotNull Project project) {
+  public @NotNull CoverageAnnotator getCoverageAnnotator(@NotNull Project project) {
     return KarmaCoverageAnnotator.getInstance(project);
   }
 
@@ -90,17 +87,11 @@ public class KarmaCoverageEngine extends CoverageEngine {
   }
 
   @Override
-  public boolean acceptedByFilters(@NotNull PsiFile psiFile, @NotNull CoverageSuitesBundle suite) {
-    return true;
-  }
-
-  @Override
   protected String getQualifiedName(@NotNull File outputFile, @NotNull PsiFile sourceFile) {
     return getQName(sourceFile);
   }
 
-  @Nullable
-  private static String getQName(@NotNull PsiFile sourceFile) {
+  private static @Nullable String getQName(@NotNull PsiFile sourceFile) {
     final VirtualFile file = sourceFile.getVirtualFile();
     if (file == null) {
       return null;
@@ -108,9 +99,8 @@ public class KarmaCoverageEngine extends CoverageEngine {
     return file.getPath();
   }
 
-  @NotNull
   @Override
-  public Set<String> getQualifiedNames(@NotNull PsiFile sourceFile) {
+  public @NotNull Set<String> getQualifiedNames(@NotNull PsiFile sourceFile) {
     final String qName = getQName(sourceFile);
     return qName != null ? Collections.singleton(qName) : Collections.emptySet();
   }
@@ -133,9 +123,8 @@ public class KarmaCoverageEngine extends CoverageEngine {
   @Override
   public CoverageViewExtension createCoverageViewExtension(final Project project, final CoverageSuitesBundle suiteBundle) {
     return new DirectoryCoverageViewExtension(project, getCoverageAnnotator(project), suiteBundle) {
-      @NotNull
       @Override
-      public AbstractTreeNode createRootNode() {
+      public @NotNull AbstractTreeNode<?> createRootNode() {
         VirtualFile rootDir = findRootDir(project, suiteBundle);
         if (rootDir == null) {
           rootDir = ProjectUtil.guessProjectDir(myProject);
@@ -151,15 +140,14 @@ public class KarmaCoverageEngine extends CoverageEngine {
    * Finds a root directory for Coverage toolwindow view.
    * Returns a content root containing at least one covered file.
    */
-  @Nullable
-  private static VirtualFile findRootDir(@NotNull final Project project, @NotNull final CoverageSuitesBundle suitesBundle) {
+  private static @Nullable VirtualFile findRootDir(final @NotNull Project project, final @NotNull CoverageSuitesBundle suitesBundle) {
     return ReadAction.compute(() -> {
       CoverageDataManager coverageDataManager = CoverageDataManager.getInstance(project);
       for (CoverageSuite suite : suitesBundle.getSuites()) {
         ProjectData data = suite.getCoverageData(coverageDataManager);
         if (data != null) {
           for (String path : data.getClasses().keySet()) {
-            VirtualFile file = VfsUtil.findFileByIoFile(new File(path), false);
+            VirtualFile file = LocalFileSystem.getInstance().findFileByPath(path);
             if (file != null && file.isValid()) {
               ProjectFileIndex projectFileIndex = ProjectFileIndex.getInstance(project);
               VirtualFile contentRoot = projectFileIndex.getContentRootForFile(file);

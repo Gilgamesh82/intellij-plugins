@@ -4,7 +4,7 @@ package org.angular2.lang.expr.service
 import com.intellij.ide.highlighter.HtmlFileType
 import com.intellij.lang.javascript.service.JSLanguageService
 import com.intellij.lang.javascript.service.JSLanguageServiceProvider
-import com.intellij.lang.typescript.compiler.TypeScriptLanguageServiceProvider
+import com.intellij.lang.typescript.compiler.languageService.TypeScriptLanguageServiceUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -15,12 +15,13 @@ import com.intellij.openapi.vfs.VirtualFile
 internal class Angular2LanguageServiceProvider(project: Project) : JSLanguageServiceProvider {
   private val tsLanguageService by lazy(LazyThreadSafetyMode.PUBLICATION) { project.service<AngularServiceWrapper>() }
 
-  override fun getAllServices(): List<JSLanguageService> = listOf(tsLanguageService.service)
+  override val allServices: List<JSLanguageService>
+    get() = listOf(tsLanguageService.service)
 
   override fun getService(file: VirtualFile): JSLanguageService? = allServices.firstOrNull { it.isAcceptable(file) }
 
   override fun isHighlightingCandidate(file: VirtualFile): Boolean {
-    return TypeScriptLanguageServiceProvider.isJavaScriptOrTypeScriptFileType(file.fileType)
+    return TypeScriptLanguageServiceUtil.isJavaScriptOrTypeScriptFileType(file.fileType)
            || file.fileType == HtmlFileType.INSTANCE
   }
 }

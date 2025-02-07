@@ -9,13 +9,19 @@
       <sourceFolder url="file://$MODULE_DIR$/test-resources" type="java-test-resource" />
     </content>
     <orderEntry type="inheritedJdk" />
+    <orderEntry type="module" module-name="intellij.platform.ide.observable" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="intellij.clion.embedded.plugin" />
+    <orderEntry type="module" module-name="intellij.platform.ide.impl" />
     <orderEntry type="module" module-name="intellij.clion" />
+    <orderEntry type="module" module-name="intellij.cidr.common.testFramework.core.nolang" scope="TEST" />
     <orderEntry type="module" module-name="intellij.cidr.debugger" />
+    <orderEntry type="module" module-name="intellij.cidr.common.testFramework.core" scope="TEST" />
     <orderEntry type="module" module-name="intellij.clion.embedded" />
     <orderEntry type="module" module-name="intellij.clion.execution" />
     <orderEntry type="module" module-name="intellij.platform.testFramework" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.platform.ide.core.impl" />
+    <orderEntry type="module" module-name="intellij.cidr.externalSystem" />
     <orderEntry type="module" module-name="intellij.terminal" />
     <orderEntry type="module" module-name="intellij.platform.core.ui" />
     <orderEntry type="module" module-name="intellij.platform.statistics" />
@@ -29,5 +35,7 @@
     <orderEntry type="library" name="eclipse.lsp4j.jsonrpc" level="project" />
     <orderEntry type="library" name="jediterm-core" level="project" />
     <orderEntry type="library" name="jediterm-ui" level="project" />
+    <orderEntry type="module" module-name="intellij.platform.ui.jcef" />
+    <orderEntry type="module" module-name="intellij.clion.testFramework" scope="TEST" />
   </component>
 </module>

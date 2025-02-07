@@ -1,4 +1,4 @@
-// Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.vuejs.lang.html.lexer
 
 import com.intellij.html.embedding.*
@@ -6,7 +6,7 @@ import com.intellij.html.embedding.HtmlEmbeddedContentSupport.Companion.getStyle
 import com.intellij.lang.Language
 import com.intellij.lang.css.CSSLanguage
 import com.intellij.lang.html.HTMLLanguage
-import com.intellij.lang.javascript.JSElementTypes
+import com.intellij.lang.javascript.JSModuleContentType
 import com.intellij.lang.javascript.JavaScriptSupportLoader
 import com.intellij.lexer.BaseHtmlLexer
 import com.intellij.lexer.Lexer
@@ -39,13 +39,12 @@ class VueEmbeddedContentSupport : HtmlEmbeddedContentSupport {
         lexer,
         INTERPOLATION_EXPR,
         { VueScriptLangs.createExprHighlightingLexer((lexer as VueLexer).langMode) },
-        { VueJSEmbeddedExprTokenType.createInterpolationExpression((lexer as VueLexer).langMode, (lexer as VueLexer).project) }
+        { VueJSEmbeddedExprTokenType.createInterpolationExpression((lexer as VueLexer).langMode, lexer.project) }
       )
     )
 }
 
-class VueAttributeEmbeddedContentProvider(lexer: BaseHtmlLexer) : HtmlAttributeEmbeddedContentProvider(lexer) {
-
+private class VueAttributeEmbeddedContentProvider(lexer: BaseHtmlLexer) : HtmlAttributeEmbeddedContentProvider(lexer) {
   private var injectEmpty: Boolean = false
   private val project get() = (lexer as VueLexer).project
 
@@ -85,8 +84,7 @@ class VueAttributeEmbeddedContentProvider(lexer: BaseHtmlLexer) : HtmlAttributeE
   }
 }
 
-class VueTagEmbeddedContentProvider(lexer: BaseHtmlLexer) : HtmlTagEmbeddedContentProvider(lexer) {
-
+internal class VueTagEmbeddedContentProvider(lexer: BaseHtmlLexer) : HtmlTagEmbeddedContentProvider(lexer) {
   private val languageLevel get() = (lexer as VueLexer).languageLevel
   private val langMode get() = (lexer as VueLexer).langMode
   private val htmlCompatMode get() = (lexer as VueLexer).htmlCompatMode
@@ -209,7 +207,7 @@ class VueTagEmbeddedContentProvider(lexer: BaseHtmlLexer) : HtmlTagEmbeddedConte
       null -> HtmlEmbeddedContentProvider.RAW_TEXT_EMBEDMENT
       else -> object : HtmlEmbedmentInfo {
         // JSElementTypes.toModuleContentType is significant for JSX/TSX
-        override fun getElementType(): IElementType? = JSElementTypes.toModuleContentType(elementType)
+        override fun getElementType(): IElementType? = JSModuleContentType.toModuleContentType(elementType)
         override fun createHighlightingLexer(): Lexer? = embedmentInfo.createHighlightingLexer()
       }
     }

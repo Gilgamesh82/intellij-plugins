@@ -1,0 +1,48 @@
+### auto-generated section `build intellij.ruby.featuresTrainer` start
+load("@rules_jvm//:jvm.bzl", "jvm_library", "jvm_resources", "jvm_test")
+
+jvm_resources(
+  name = "ruby-featuresTrainer_resources",
+  files = glob(["resources/**/*"]),
+  strip_prefix = "resources"
+)
+
+jvm_library(
+  name = "ruby-featuresTrainer",
+  module_name = "intellij.ruby.featuresTrainer",
+  visibility = ["//visibility:public"],
+  srcs = glob(["src/**/*.kt", "src/**/*.java"], allow_empty = True),
+  deps = [
+    "@lib//:kotlin-stdlib",
+    "//ruby",
+    "@community//plugins/ide-features-trainer:featuresTrainer",
+    "@community//platform/platform-impl:ide-impl",
+    "@community//platform/core-ui",
+  ],
+  runtime_deps = [":ruby-featuresTrainer_resources"]
+)
+
+jvm_library(
+  name = "ruby-featuresTrainer_test_lib",
+  visibility = ["//visibility:public"],
+  srcs = glob(["testSrc/**/*.kt", "testSrc/**/*.java"], allow_empty = True),
+  associates = [":ruby-featuresTrainer"],
+  deps = [
+    "@lib//:kotlin-stdlib",
+    "//ruby",
+    "@community//plugins/ide-features-trainer:featuresTrainer",
+    "@community//plugins/ide-features-trainer:featuresTrainer_test_lib",
+    "@community//platform/platform-impl:ide-impl",
+    "@community//platform/platform-impl:ide-impl_test_lib",
+    "@community//platform/core-ui",
+    "@community//platform/testFramework",
+    "@community//platform/testFramework:testFramework_test_lib",
+  ],
+  runtime_deps = [":ruby-featuresTrainer_resources"]
+)
+
+jvm_test(
+  name = "ruby-featuresTrainer_test",
+  runtime_deps = [":ruby-featuresTrainer_test_lib"]
+)
+### auto-generated section `build intellij.ruby.featuresTrainer` end

@@ -1,4 +1,4 @@
-// Copyright 2000-2021 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.jetbrains.lang.dart.ide.inspections;
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
@@ -28,6 +28,7 @@ import com.jetbrains.lang.dart.sdk.DartSdkLibUtil;
 import com.jetbrains.lang.dart.util.DartResolveUtil;
 import com.jetbrains.lang.dart.util.DotPackagesFileUtil;
 import com.jetbrains.lang.dart.util.PubspecYamlUtil;
+import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -39,8 +40,8 @@ public final class DartOutdatedDependenciesInspection extends LocalInspectionToo
   private final Set<String> myIgnoredPubspecPaths = new HashSet<>(); // remember for the current session only, do not serialize
 
   @Override
-  public ProblemDescriptor @Nullable [] checkFile(@NotNull final PsiFile psiFile,
-                                                  @NotNull final InspectionManager manager,
+  public ProblemDescriptor @Nullable [] checkFile(final @NotNull PsiFile psiFile,
+                                                  final @NotNull InspectionManager manager,
                                                   final boolean isOnTheFly) {
     if (!isOnTheFly) return null;
 
@@ -69,7 +70,7 @@ public final class DartOutdatedDependenciesInspection extends LocalInspectionToo
     if (FlutterUtil.isPubspecDeclaringFlutter(pubspecFile)) return null; // 'pub get' will fail anyway
 
     VirtualFile packagesFile = DartAnalysisServerService.isDartSdkVersionSufficientForPackageConfigJson(sdk)
-                               ? DotPackagesFileUtil.getPackageConfigJsonFile(pubspecFile)
+                               ? DotPackagesFileUtil.getPackageConfigJsonFile(project, pubspecFile)
                                : pubspecFile.getParent().findChild(DotPackagesFileUtil.DOT_PACKAGES);
 
     if (packagesFile == null) {
@@ -101,20 +102,18 @@ public final class DartOutdatedDependenciesInspection extends LocalInspectionToo
     private final @IntentionName String myFixName;
     private final String myActionId;
 
-    private RunPubFix(@NotNull @IntentionName String fixName, @NotNull @NonNls String actionId) {
+    private RunPubFix(@NotNull @IntentionName String fixName, @NotNull @NonNls @Language("devkit-action-id") String actionId) {
       myFixName = fixName;
       myActionId = actionId;
     }
 
     @Override
-    @NotNull
-    public String getName() {
+    public @NotNull String getName() {
       return myFixName;
     }
 
     @Override
-    @NotNull
-    public String getFamilyName() {
+    public @NotNull String getFamilyName() {
       return getName();
     }
 
@@ -124,7 +123,7 @@ public final class DartOutdatedDependenciesInspection extends LocalInspectionToo
     }
 
     @Override
-    public void applyFix(@NotNull final Project project, @NotNull final PsiFile psiFile, @Nullable final Editor editor) {
+    public void applyFix(final @NotNull Project project, final @NotNull PsiFile psiFile, final @Nullable Editor editor) {
       final VirtualFile file = DartResolveUtil.getRealVirtualFile(psiFile);
       if (file == null || !file.isInLocalFileSystem()) return;
 
@@ -143,14 +142,12 @@ public final class DartOutdatedDependenciesInspection extends LocalInspectionToo
 
   private static class OpenPubspecFix extends IntentionAndQuickFixAction {
     @Override
-    @NotNull
-    public String getName() {
+    public @NotNull String getName() {
       return DartBundle.message("open.pubspec");
     }
 
     @Override
-    @NotNull
-    public String getFamilyName() {
+    public @NotNull String getFamilyName() {
       return getName();
     }
 
@@ -160,7 +157,7 @@ public final class DartOutdatedDependenciesInspection extends LocalInspectionToo
     }
 
     @Override
-    public void applyFix(@NotNull final Project project, @NotNull final PsiFile psiFile, @Nullable final Editor editor) {
+    public void applyFix(final @NotNull Project project, final @NotNull PsiFile psiFile, final @Nullable Editor editor) {
       final VirtualFile file = DartResolveUtil.getRealVirtualFile(psiFile);
       if (file == null || !file.isInLocalFileSystem()) return;
 
@@ -172,23 +169,21 @@ public final class DartOutdatedDependenciesInspection extends LocalInspectionToo
   }
 
   private static class IgnoreWarningFix extends IntentionAndQuickFixAction {
-    @NotNull private final Set<? super String> myIgnoredPubspecPaths;
-    @NotNull private final String myPubspecPath;
+    private final @NotNull Set<? super String> myIgnoredPubspecPaths;
+    private final @NotNull String myPubspecPath;
 
-    IgnoreWarningFix(@NotNull final Set<? super String> ignoredPubspecPaths, @NotNull final String pubspecPath) {
+    IgnoreWarningFix(final @NotNull Set<? super String> ignoredPubspecPaths, final @NotNull String pubspecPath) {
       myIgnoredPubspecPaths = ignoredPubspecPaths;
       myPubspecPath = pubspecPath;
     }
 
     @Override
-    @NotNull
-    public String getName() {
+    public @NotNull String getName() {
       return DartBundle.message("ignore.warning");
     }
 
     @Override
-    @NotNull
-    public String getFamilyName() {
+    public @NotNull String getFamilyName() {
       return getName();
     }
 
@@ -198,7 +193,7 @@ public final class DartOutdatedDependenciesInspection extends LocalInspectionToo
     }
 
     @Override
-    public void applyFix(@NotNull final Project project, @NotNull final PsiFile psiFile, @Nullable final Editor editor) {
+    public void applyFix(final @NotNull Project project, final @NotNull PsiFile psiFile, final @Nullable Editor editor) {
       myIgnoredPubspecPaths.add(myPubspecPath);
       DaemonCodeAnalyzer.getInstance(project).restart();
     }

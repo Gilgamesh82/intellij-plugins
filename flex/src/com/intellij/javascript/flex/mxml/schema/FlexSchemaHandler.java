@@ -3,8 +3,8 @@ package com.intellij.javascript.flex.mxml.schema;
 
 import com.intellij.javascript.flex.mxml.MxmlJSClass;
 import com.intellij.javascript.flex.resolve.FlexResolveHelper;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lang.javascript.flex.FlexModuleType;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.flex.XmlBackedJSClassImpl;
 import com.intellij.lang.javascript.index.JSPackageIndex;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
@@ -53,7 +53,7 @@ public final class FlexSchemaHandler extends XmlSchemaProvider implements DumbAw
 
   @Override
   public @Nullable XmlFile getSchema(final @NotNull @NonNls String url, final Module module, final @NotNull PsiFile baseFile) {
-    return url.length() > 0 && JavaScriptSupportLoader.isFlexMxmFile(baseFile)
+    return !url.isEmpty() && FlexSupportLoader.isFlexMxmFile(baseFile)
            ? getFakeSchemaReference(url, module, baseFile.getResolveScope())
            : null;
   }
@@ -93,8 +93,8 @@ public final class FlexSchemaHandler extends XmlSchemaProvider implements DumbAw
       }
     }
 
-    if (tagName == null && !illegalNamespaces.contains(JavaScriptSupportLoader.MXML_URI)) {
-      result.add(JavaScriptSupportLoader.MXML_URI);
+    if (tagName == null && !illegalNamespaces.contains(FlexSupportLoader.MXML_URI)) {
+      result.add(FlexSupportLoader.MXML_URI);
     }
 
     if (XmlBackedJSClassImpl.SCRIPT_TAG_NAME.equals(tagName) || "Style".equals(tagName)) return result;
@@ -155,7 +155,7 @@ public final class FlexSchemaHandler extends XmlSchemaProvider implements DumbAw
 
   @Override
   public boolean isAvailable(final @NotNull XmlFile file) {
-    return JavaScriptSupportLoader.isFlexMxmFile(file);
+    return FlexSupportLoader.isFlexMxmFile(file);
   }
 
   @Override
@@ -169,11 +169,11 @@ public final class FlexSchemaHandler extends XmlSchemaProvider implements DumbAw
     final String[] knownNamespaces = rootTag == null ? null : rootTag.knownNamespaces();
     final Collection<String> illegalNamespaces = new ArrayList<>();
     if (knownNamespaces != null) {
-      if (ArrayUtil.contains(JavaScriptSupportLoader.MXML_URI, knownNamespaces)) {
+      if (ArrayUtil.contains(FlexSupportLoader.MXML_URI, knownNamespaces)) {
         ContainerUtil.addAll(illegalNamespaces, MxmlJSClass.FLEX_4_NAMESPACES);
       }
-      else if (ArrayUtil.contains(JavaScriptSupportLoader.MXML_URI3, knownNamespaces)) {
-        illegalNamespaces.add(JavaScriptSupportLoader.MXML_URI);
+      else if (ArrayUtil.contains(FlexSupportLoader.MXML_URI3, knownNamespaces)) {
+        illegalNamespaces.add(FlexSupportLoader.MXML_URI);
       }
     }
     return illegalNamespaces;
@@ -235,8 +235,8 @@ public final class FlexSchemaHandler extends XmlSchemaProvider implements DumbAw
   }
 
   public static String getDefaultPrefix(@NotNull @NonNls String namespace) {
-    if (JavaScriptSupportLoader.MXML_URI.equals(namespace)) return "mx";
-    if (JavaScriptSupportLoader.MXML_URI3.equals(namespace)) return "fx";
+    if (FlexSupportLoader.MXML_URI.equals(namespace)) return "mx";
+    if (FlexSupportLoader.MXML_URI3.equals(namespace)) return "fx";
     if (MxmlJSClass.MXML_URI4.equals(namespace)) return "s";
     if (MxmlJSClass.MXML_URI5.equals(namespace)) return "h";
     if (MxmlJSClass.MXML_URI6.equals(namespace)) return "mx";
@@ -267,7 +267,7 @@ public final class FlexSchemaHandler extends XmlSchemaProvider implements DumbAw
         final int endIndex = (dotIndex == -1)
                              ? (slashIndex == -1 ? path.length() : slashIndex)
                              : (slashIndex == -1 ? dotIndex : Math.min(dotIndex, slashIndex));
-        if (path.length() > 0 && endIndex > 0) {
+        if (!path.isEmpty() && endIndex > 0) {
           prefix = path.substring(0, endIndex);
         }
       }

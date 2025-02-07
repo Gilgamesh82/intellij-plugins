@@ -1,4 +1,4 @@
-// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.intellij.terraform.config.inspection
 
 import com.intellij.codeInspection.LocalInspectionTool
@@ -16,11 +16,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.pom.Navigatable
-import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiElementVisitor
-import com.intellij.psi.PsiFile
-import com.intellij.psi.PsiNamedElement
-import com.intellij.psi.SmartPsiElementPointer
+import com.intellij.psi.*
 import com.intellij.psi.impl.source.tree.injected.InjectedLanguageUtil
 import com.intellij.refactoring.actions.RenameElementAction
 import com.intellij.usageView.UsageInfo
@@ -29,13 +25,12 @@ import com.intellij.util.NullableFunction
 import org.intellij.terraform.config.model.getTerraformSearchScope
 import org.intellij.terraform.config.patterns.TerraformPatterns
 import org.intellij.terraform.hcl.HCLBundle
-import org.intellij.terraform.isTerraformPsiFile
-
+import org.intellij.terraform.isTerraformCompatiblePsiFile
 
 abstract class TFDuplicatedInspectionBase : LocalInspectionTool() {
 
   override fun isAvailableForFile(file: PsiFile): Boolean {
-    return isTerraformPsiFile(file)
+    return isTerraformCompatiblePsiFile(file)
   }
 
   override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor {
@@ -75,7 +70,8 @@ abstract class TFDuplicatedInspectionBase : LocalInspectionTool() {
 
   abstract fun createVisitor(holder: ProblemsHolder): PsiElementVisitor
 
-  protected fun createNavigateToDupeFix(psiPointer: SmartPsiElementPointer<PsiElement>, single: Boolean): LocalQuickFix {
+  protected fun createNavigateToDupeFix(psiElement: PsiElement, single: Boolean): LocalQuickFix {
+    val psiPointer = psiElement.createSmartPointer()
     return object : LocalQuickFix {
       override fun startInWriteAction(): Boolean = false
 

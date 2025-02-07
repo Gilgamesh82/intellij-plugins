@@ -1,0 +1,69 @@
+### auto-generated section `build intellij.yeoman` start
+load("@rules_jvm//:jvm.bzl", "jvm_library", "jvm_resources", "jvm_test")
+
+jvm_resources(
+  name = "yeoman_resources",
+  files = glob(["compatibilityResources/**/*"]),
+  strip_prefix = "compatibilityResources"
+)
+
+jvm_resources(
+  name = "yeoman_resources_1",
+  files = glob(["resources/**/*"]),
+  strip_prefix = "resources"
+)
+
+jvm_library(
+  name = "yeoman",
+  module_name = "intellij.yeoman",
+  visibility = ["//visibility:public"],
+  srcs = glob(["src/**/*.kt", "src/**/*.java"], allow_empty = True),
+  deps = [
+    "@community//platform/platform-api:ide",
+    "@community//platform/lang-api:lang",
+    "@community//platform/lang-impl",
+    "@lib//:gson",
+    "//plugins/JavaScriptLanguage:javascript-impl",
+    "@community//platform/platform-impl:ide-impl",
+    "//plugins/JavaScriptLanguage:javascript-plugin",
+    "@community//platform/core-ui",
+    "@community//platform/platform-util-io:ide-util-io",
+    "@community//platform/util/text-matching",
+  ],
+  runtime_deps = [
+    ":yeoman_resources",
+    ":yeoman_resources_1",
+  ]
+)
+
+jvm_library(
+  name = "yeoman_test_lib",
+  visibility = ["//visibility:public"],
+  srcs = glob(["testSrc/**/*.kt", "testSrc/**/*.java"], allow_empty = True),
+  associates = [":yeoman"],
+  deps = [
+    "@community//platform/platform-api:ide",
+    "@community//platform/lang-api:lang",
+    "@community//platform/lang-impl",
+    "@lib//:gson",
+    "//plugins/JavaScriptLanguage:javascript-impl",
+    "@community//platform/platform-impl:ide-impl",
+    "@community//platform/platform-impl:ide-impl_test_lib",
+    "//plugins/JavaScriptLanguage:javascript-plugin",
+    "@community//platform/testFramework",
+    "@community//platform/testFramework:testFramework_test_lib",
+    "@community//platform/core-ui",
+    "@community//platform/platform-util-io:ide-util-io",
+    "@community//platform/util/text-matching",
+  ],
+  runtime_deps = [
+    ":yeoman_resources",
+    ":yeoman_resources_1",
+  ]
+)
+
+jvm_test(
+  name = "yeoman_test",
+  runtime_deps = [":yeoman_test_lib"]
+)
+### auto-generated section `build intellij.yeoman` end

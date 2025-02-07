@@ -3,25 +3,32 @@ package org.angular2.codeInsight
 
 import com.intellij.lang.Language
 import com.intellij.lang.css.CSSLanguage
+import com.intellij.lang.javascript.evaluation.JSTypeEvaluationLocationProvider
 import com.intellij.lang.javascript.highlighting.TypeScriptHighlighter
 import com.intellij.lang.javascript.psi.ecmal4.JSClass
+import com.intellij.lang.javascript.validation.JSTooltipWithHtmlHighlighter
 import com.intellij.lang.javascript.validation.JSTooltipWithHtmlHighlighter.Companion.applyAttributes
 import com.intellij.lang.javascript.validation.JSTooltipWithHtmlHighlighter.Companion.highlightName
 import com.intellij.lang.javascript.validation.JSTooltipWithHtmlHighlighter.Companion.highlightWithLexer
+import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.XmlHighlighterColors
+import com.intellij.openapi.editor.colors.CodeInsightColors
 import com.intellij.openapi.editor.colors.TextAttributesKey
+import com.intellij.openapi.util.NlsSafe
 import com.intellij.psi.PsiElement
-import org.angular2.codeInsight.Angular2HighlightingUtils.TextAttributesKind.NG_PIPE
+import org.angular2.codeInsight.Angular2HighlightingUtils.TextAttributesKind.*
 import org.angular2.codeInsight.blocks.Angular2BlockParameterSymbol
 import org.angular2.codeInsight.blocks.Angular2HtmlBlockSymbol
 import org.angular2.entities.*
 import org.angular2.lang.Angular2Bundle
+import org.angular2.lang.expr.highlighting.Angular2HighlighterColors
 import org.angular2.lang.html.highlighting.Angular2HtmlHighlighterColors
 import org.angular2.lang.html.psi.Angular2HtmlBlock
 
 object Angular2HighlightingUtils {
 
   enum class TextAttributesKind(val key: TextAttributesKey) {
+    TS_LOCAL_VARIABLE(TypeScriptHighlighter.TS_LOCAL_VARIABLE),
     TS_PROPERTY(TypeScriptHighlighter.TS_INSTANCE_MEMBER_VARIABLE),
     TS_FUNCTION(TypeScriptHighlighter.TS_EXPORTED_FUNCTION),
     TS_KEYWORD(TypeScriptHighlighter.TS_KEYWORD),
@@ -30,12 +37,16 @@ object Angular2HighlightingUtils {
     NG_INPUT(Angular2HtmlHighlighterColors.NG_PROPERTY_BINDING_ATTR_NAME),
     NG_OUTPUT(Angular2HtmlHighlighterColors.NG_EVENT_BINDING_ATTR_NAME),
     NG_IN_OUT(Angular2HtmlHighlighterColors.NG_BANANA_BINDING_ATTR_NAME),
+    NG_TEMPLATE_VARIABLE(Angular2HighlighterColors.NG_VARIABLE),
     NG_DIRECTIVE(TypeScriptHighlighter.TS_CLASS),
     NG_PIPE(NG_PIPE_KEY),
     NG_EXPORT_AS(NG_EXPORT_AS_KEY),
     NG_BLOCK(Angular2HtmlHighlighterColors.NG_BLOCK_NAME),
     NG_DEFER_TRIGGER(TypeScriptHighlighter.TS_GLOBAL_FUNCTION),
-    NG_EXPRESSION_PREFIX(TypeScriptHighlighter.TS_KEYWORD)
+    NG_EXPRESSION_PREFIX(TypeScriptHighlighter.TS_KEYWORD),
+
+    UNUSED(CodeInsightColors.NOT_USED_ELEMENT_ATTRIBUTES),
+    ERROR(CodeInsightColors.WRONG_REFERENCES_ATTRIBUTES)
   }
 
   val NG_EXPORT_AS_KEY: TextAttributesKey = TypeScriptHighlighter.TS_INSTANCE_MEMBER_VARIABLE
@@ -43,7 +54,9 @@ object Angular2HighlightingUtils {
 
   val Angular2Entity.htmlLabel: String
     get() =
-      Angular2Bundle.message(
+      if (this is Angular2Module && this.isStandalonePseudoModule)
+        htmlClassName
+      else Angular2Bundle.message(
         when (this) {
           is Angular2Module -> "angular.entity.module"
           is Angular2Component -> "angular.entity.component"
@@ -60,25 +73,38 @@ object Angular2HighlightingUtils {
     get() = highlightName(this, name ?: Angular2Bundle.message("angular.description.unknown-class"))
 
   val Angular2HtmlBlock.htmlName: String
-    get() = "@${getName()}".withColor(TextAttributesKind.NG_BLOCK, this)
+    get() = "@${getName()}".withColor(NG_BLOCK, this)
 
   fun Angular2HtmlBlockSymbol?.htmlName(context: PsiElement): String =
-    "@${this?.name ?: "<unknown>"}".withColor(TextAttributesKind.NG_BLOCK, context)
+    "@${this?.name ?: "<unknown>"}".withColor(NG_BLOCK, context)
 
   fun Angular2BlockParameterSymbol.htmlName(context: PsiElement): String =
-    name.withColor(TextAttributesKind.NG_EXPRESSION_PREFIX, context)
+    name.withColor(NG_EXPRESSION_PREFIX, context)
 
-  fun String.withNameColor(element: PsiElement) =
+  fun String.withNameColor(element: PsiElement): @NlsSafe String =
     highlightName(element, this)
 
-  fun String.withColor(attributes: TextAttributesKind, context: PsiElement) =
-    applyAttributes(context.project, this, attributes.key)
+  fun String.withColor(attributes: TextAttributesKind, context: PsiElement, wrapWithCodeTag: Boolean = true): @NlsSafe String =
+    applyAttributes(context.project, this, attributes.key, wrapWithCodeTag)
 
-  fun String.withColor(language: Language, context: PsiElement) =
+  fun String.withColor(language: Language, context: PsiElement): @NlsSafe String =
     highlightWithLexer(context.project, this, language)
+
+  fun renderCode(vararg items: Pair<String, TextAttributesKind?>, context: PsiElement): String =
+    context.project.service<JSTooltipWithHtmlHighlighter>().let { highlighter ->
+      highlighter.wrapWithCodeTag(
+        items.joinToString("") { (code, key) ->
+          if (key != null)
+            highlighter.applyAttributes(code, key.key, false)
+          else
+            code
+        }, isBlock = false
+      )
+    }
 
   @JvmStatic
   fun <T : Angular2Entity> renderEntityList(entities: Collection<T>): String {
+    JSTypeEvaluationLocationProvider.assertLocationIsSet()
     val result = StringBuilder()
     var i = -1
     for (entity in entities) {

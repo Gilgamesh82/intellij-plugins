@@ -1,0 +1,72 @@
+### auto-generated section `build intellij.handlebars` start
+load("@rules_jvm//:jvm.bzl", "jvm_library", "jvm_resources", "jvm_test")
+
+jvm_resources(
+  name = "handlebars_resources",
+  files = glob(["resources/**/*"]),
+  strip_prefix = "resources"
+)
+
+jvm_resources(
+  name = "handlebars_resources_1",
+  files = glob(["compatibilityResources/**/*"]),
+  strip_prefix = "compatibilityResources"
+)
+
+jvm_library(
+  name = "handlebars",
+  module_name = "intellij.handlebars",
+  visibility = ["//visibility:public"],
+  srcs = glob(["src/**/*.kt", "src/**/*.java", "gen/**/*.kt", "gen/**/*.java"], allow_empty = True),
+  deps = [
+    "@community//platform/platform-impl:ide-impl",
+    "@community//platform/lang-impl",
+    "@community//platform/editor-ui-ex:editor-ex",
+    "@community//xml/impl",
+    "@community//xml/xml-parser:parser",
+    "@community//platform/ide-core-impl",
+    "//plugins/JavaScriptLanguage/javascript-parser",
+    "@community//platform/core-ui",
+    "@community//platform/code-style-impl:codeStyle-impl",
+  ],
+  runtime_deps = [
+    ":handlebars_resources",
+    ":handlebars_resources_1",
+  ]
+)
+
+jvm_library(
+  name = "handlebars_test_lib",
+  visibility = ["//visibility:public"],
+  srcs = glob(["test/src/**/*.kt", "test/src/**/*.java"], allow_empty = True),
+  associates = [":handlebars"],
+  deps = [
+    "@community//platform/platform-impl:ide-impl",
+    "@community//platform/platform-impl:ide-impl_test_lib",
+    "@community//platform/lang-impl",
+    "@community//platform/editor-ui-ex:editor-ex",
+    "@community//xml/impl",
+    "@community//xml/xml-parser:parser",
+    "@community//platform/ide-core-impl",
+    "//plugins/JavaScriptLanguage/javascript-parser",
+    "//plugins/JavaScriptLanguage:javascript",
+    "//plugins/JavaScriptLanguage:javascript-testFramework",
+    "@community//platform/testFramework",
+    "@community//platform/testFramework:testFramework_test_lib",
+    "//plugins/JavaScriptLanguage/javascript-psi-impl",
+    "@community//platform/core-ui",
+    "@community//platform/code-style-impl:codeStyle-impl",
+    "@community//xml/relaxng",
+    "@community//xml/relaxng:relaxng_test_lib",
+  ],
+  runtime_deps = [
+    ":handlebars_resources",
+    ":handlebars_resources_1",
+  ]
+)
+
+jvm_test(
+  name = "handlebars_test",
+  runtime_deps = [":handlebars_test_lib"]
+)
+### auto-generated section `build intellij.handlebars` end

@@ -4,7 +4,6 @@ package org.angular2.cli
 import com.intellij.execution.configurations.CommandLineTokenizer
 import com.intellij.execution.filters.Filter
 import com.intellij.ide.util.projectWizard.SettingsStep
-import com.intellij.javascript.nodejs.NodePackageVersionUtil
 import com.intellij.javascript.nodejs.util.NodePackage
 import com.intellij.lang.javascript.boilerplate.NpmPackageProjectGenerator
 import com.intellij.lang.javascript.boilerplate.NpxPackageDescriptor
@@ -127,9 +126,11 @@ class AngularCliProjectGenerator : NpmPackageProjectGenerator() {
   }
 
 
-  override fun postInstall(project: Project,
-                           baseDir: VirtualFile,
-                           workingDir: File): Runnable {
+  override fun postInstall(
+    project: Project,
+    baseDir: VirtualFile,
+    workingDir: File,
+  ): Runnable {
     return Runnable {
       ApplicationManager.getApplication().executeOnPooledThread {
         super.postInstall(project, baseDir, workingDir).run()
@@ -241,9 +242,9 @@ class AngularCliProjectGenerator : NpmPackageProjectGenerator() {
               thisLogger().error("Failed to load schematics", e)
             }
 
-            val packageVersion = NodePackageVersionUtil.getPackageVersion(nodePackage.systemIndependentPath)
-            if (packageVersion != null && packageVersion.semVer != null) {
-              cliVersion.set(packageVersion.semVer)
+            val packageVersion = nodePackage.version
+            if (packageVersion != null) {
+              cliVersion.set(packageVersion)
             }
           }
         }
@@ -260,14 +261,16 @@ class AngularCliProjectGenerator : NpmPackageProjectGenerator() {
     }
   }
 
-  private class AngularCLIProjectSettings(settings: Settings,
-                                          val useDefaults: Boolean,
-                                          val useStandalone: Boolean,
-                                          val options: String)
+  private class AngularCLIProjectSettings(
+    settings: Settings,
+    val useDefaults: Boolean,
+    val useStandalone: Boolean,
+    val options: String,
+  )
     : Settings(settings.myInterpreterRef, settings.myPackage)
 
   companion object {
-    const val NG_EXECUTABLE = "ng"
+    const val NG_EXECUTABLE: String = "ng"
   }
 }
 

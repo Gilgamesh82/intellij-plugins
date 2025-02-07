@@ -22,13 +22,22 @@ import com.intellij.testFramework.UsefulTestCase
 import com.intellij.util.containers.ContainerUtil
 import com.intellij.webSymbols.*
 import com.intellij.webSymbols.WebSymbolDelegate.Companion.unwrapAllDelegates
+import com.intellij.webSymbols.testFramework.checkListByFile
+import com.intellij.webSymbols.testFramework.doCompletionItemsTest
+import com.intellij.webSymbols.testFramework.enableIdempotenceChecksOnEveryCache
+import com.intellij.webSymbols.testFramework.moveToOffsetBySignature
+import com.intellij.webSymbols.testFramework.multiResolveWebSymbolReference
+import com.intellij.webSymbols.testFramework.renderLookupItems
+import com.intellij.webSymbols.testFramework.resolveReference
+import com.intellij.webSymbols.testFramework.resolveToWebSymbolSource
+import com.intellij.webSymbols.testFramework.resolveWebSymbolReference
 import com.intellij.xml.util.XmlInvalidIdInspection
 import junit.framework.TestCase
 import org.angular2.Angular2CodeInsightFixtureTestCase
 import org.angular2.Angular2TemplateInspectionsProvider
 import org.angular2.Angular2TestModule
-import org.angular2.Angular2TestModule.Companion.configureCopy
-import org.angular2.Angular2TestModule.Companion.configureLink
+import org.angular2.Angular2TestModule.Companion.configureDependencies
+import org.angular2.Angular2TestUtil
 import org.angular2.entities.Angular2Directive
 import org.angular2.entities.Angular2DirectiveAttribute
 import org.angular2.entities.Angular2DirectiveProperty
@@ -39,7 +48,6 @@ import org.angular2.inspections.AngularUndefinedBindingInspection
 import org.angular2.lang.html.psi.Angular2HtmlAttrVariable
 import org.angular2.web.PROP_BINDING_PATTERN
 import org.angular2.web.PROP_ERROR_SYMBOL
-import org.angular2.Angular2TestUtil
 
 @Deprecated("Use test appropriate for IDE feature being tested - e.g. completion/resolve/highlighting ")
 class Angular2AttributesTest : Angular2CodeInsightFixtureTestCase() {
@@ -262,14 +270,14 @@ class Angular2AttributesTest : Angular2CodeInsightFixtureTestCase() {
   }
 
   fun testOneTimeBindingAttributeCompletion2JavaScript() {
-    configureLink(myFixture, Angular2TestModule.ANGULAR_MATERIAL_7_2_1)
+    myFixture.configureDependencies(Angular2TestModule.ANGULAR_MATERIAL_7_2_1)
     myFixture.configureByFiles("compiled_binding.html")
     myFixture.completeBasic()
     UsefulTestCase.assertContainsElements(myFixture.getLookupElementStrings()!!, "color")
   }
 
   fun testOneTimeBindingAttributeCompletion2ES6() {
-    configureLink(myFixture, Angular2TestModule.ANGULAR_MATERIAL_7_2_1)
+    myFixture.configureDependencies(Angular2TestModule.ANGULAR_MATERIAL_7_2_1)
     myFixture.configureByFiles("compiled_binding.html")
     myFixture.completeBasic()
     UsefulTestCase.assertContainsElements(myFixture.getLookupElementStrings()!!, "color")
@@ -325,7 +333,7 @@ class Angular2AttributesTest : Angular2CodeInsightFixtureTestCase() {
   }
 
   fun testForCompletion2Javascript() {
-    configureLink(myFixture, Angular2TestModule.ANGULAR_COMMON_4_0_0)
+    myFixture.configureDependencies(Angular2TestModule.ANGULAR_COMMON_4_0_0)
     myFixture.configureByFiles("for2.html")
     val offsetBySignature = Angular2TestUtil.findOffsetBySignature("ngF<caret>", myFixture.getFile())
     myFixture.getEditor().getCaretModel().moveToOffset(offsetBySignature)
@@ -334,7 +342,7 @@ class Angular2AttributesTest : Angular2CodeInsightFixtureTestCase() {
   }
 
   fun testIfCompletion4JavascriptUmd() {
-    configureLink(myFixture, Angular2TestModule.ANGULAR_COMMON_4_0_0)
+    myFixture.configureDependencies(Angular2TestModule.ANGULAR_COMMON_4_0_0)
     myFixture.configureByFiles("if4.html")
     val offsetBySignature = Angular2TestUtil.findOffsetBySignature("*<caret>", myFixture.getFile())
     myFixture.getEditor().getCaretModel().moveToOffset(offsetBySignature)
@@ -344,14 +352,14 @@ class Angular2AttributesTest : Angular2CodeInsightFixtureTestCase() {
   }
 
   fun testForTemplateCompletion2Javascript() {
-    configureLink(myFixture, Angular2TestModule.ANGULAR_COMMON_4_0_0)
+    myFixture.configureDependencies(Angular2TestModule.ANGULAR_COMMON_4_0_0)
     myFixture.configureByFiles("for2Template.html")
     myFixture.completeBasic()
     UsefulTestCase.assertContainsElements(myFixture.getLookupElementStrings()!!, "*ngFor")
   }
 
   fun testForOfResolve2Javascript() {
-    configureLink(myFixture, Angular2TestModule.ANGULAR_COMMON_4_0_0)
+    myFixture.configureDependencies(Angular2TestModule.ANGULAR_COMMON_4_0_0)
     myFixture.configureByFiles("for2.html")
     val resolve = myFixture.resolveWebSymbolReference("ngF<caret>")
     assertEquals("ng_for_of.d.ts", resolve.psiContext!!.getContainingFile().getName())
@@ -410,14 +418,14 @@ class Angular2AttributesTest : Angular2CodeInsightFixtureTestCase() {
   }
 
   fun testMaterialSelectors() {
-    configureLink(myFixture, Angular2TestModule.ANGULAR_MATERIAL_7_2_1)
+    myFixture.configureDependencies(Angular2TestModule.ANGULAR_MATERIAL_7_2_1)
     myFixture.configureByFiles("material.html")
     myFixture.completeBasic()
     UsefulTestCase.assertContainsElements(myFixture.getLookupElementStrings()!!, "mat-icon-button", "mat-raised-button")
   }
 
   fun testComplexSelectorList2() {
-    configureLink(myFixture, Angular2TestModule.IONIC_ANGULAR_3_0_1)
+    myFixture.configureDependencies(Angular2TestModule.IONIC_ANGULAR_3_0_1)
     myFixture.configureByFiles("div.html")
     myFixture.completeBasic()
     UsefulTestCase.assertContainsElements(myFixture.getLookupElementStrings()!!, "ion-item")
@@ -439,46 +447,6 @@ class Angular2AttributesTest : Angular2CodeInsightFixtureTestCase() {
     myFixture.enableInspections(XmlInvalidIdInspection::class.java)
     myFixture.configureByFiles("id.html", "package.json", "object.ts")
     myFixture.checkHighlighting()
-  }
-
-  fun testViewChildReferenceNavigation() {
-    val reference = myFixture.getReferenceAtCaretPosition("viewChildReference.ts", "package.json")
-    assertNotNull(reference)
-    val el = reference!!.resolve()
-    assertNotNull(el)
-    assertEquals("#area", el!!.getParent().getParent().getText())
-  }
-
-  fun testViewChildrenReferenceNavigation() {
-    val reference = myFixture.getReferenceAtCaretPosition("viewChildrenReference.ts", "package.json")
-    assertNotNull(reference)
-    val el = reference!!.resolve()
-    assertNotNull(el)
-    assertEquals("#area", el!!.getParent().getParent().getText())
-  }
-
-  fun testViewChildReferenceCodeCompletion() {
-    assertEquals(mutableListOf("area", "area2", "area3"),
-                 myFixture.getCompletionVariants("viewChildReference.ts", "package.json"))
-  }
-
-  fun testViewChildReferenceNavigationHTML() {
-    val reference = myFixture.getReferenceAtCaretPosition("viewChildReferenceHTML.ts", "viewChildReferenceHTML.html", "package.json")
-    assertNotNull(reference)
-    val el = reference!!.resolve()
-    assertNotNull(el)
-    assertEquals("viewChildReferenceHTML.html", el!!.getContainingFile().getName())
-    assertEquals("#area", el.getParent().getParent().getText())
-  }
-
-  fun testViewChildReferenceCodeCompletionHTML() {
-    assertEquals(mutableListOf("area", "area2"),
-                 myFixture.getCompletionVariants("viewChildReferenceHTML.ts", "viewChildReferenceHTML.html", "package.json"))
-  }
-
-  fun testViewChildrenReferenceCodeCompletionHTML() {
-    assertEquals(mutableListOf("area2", "area3"),
-                 myFixture.getCompletionVariants("viewChildrenReferenceHTML.ts", "viewChildrenReferenceHTML.html", "package.json"))
   }
 
   fun testNgNoValidateReference() {
@@ -608,7 +576,7 @@ class Angular2AttributesTest : Angular2CodeInsightFixtureTestCase() {
   }
 
   fun testCodeCompletionWithNotSelector() {
-    configureLink(myFixture, Angular2TestModule.ANGULAR_ROUTER_4_0_0)
+    myFixture.configureDependencies(Angular2TestModule.ANGULAR_ROUTER_4_0_0)
     myFixture.configureByFiles("contentAssistWithNotSelector.html")
     myFixture.completeBasic()
   }
@@ -664,7 +632,7 @@ class Angular2AttributesTest : Angular2CodeInsightFixtureTestCase() {
   }
 
   fun testMatchedDirectivesProperties() {
-    configureLink(myFixture, Angular2TestModule.ANGULAR_COMMON_4_0_0, Angular2TestModule.ANGULAR_FORMS_4_0_0)
+    myFixture.configureDependencies(Angular2TestModule.ANGULAR_COMMON_4_0_0, Angular2TestModule.ANGULAR_FORMS_4_0_0)
     myFixture.configureByFiles("attributeTypes.ts", "lib.dom.d.ts")
     myFixture.completeBasic()
     UsefulTestCase.assertContainsElements(
@@ -856,7 +824,7 @@ class Angular2AttributesTest : Angular2CodeInsightFixtureTestCase() {
   }
 
   fun testTypeAttrWithFormsCompletion() {
-    configureLink(myFixture, Angular2TestModule.ANGULAR_COMMON_4_0_0, Angular2TestModule.ANGULAR_FORMS_4_0_0)
+    myFixture.configureDependencies(Angular2TestModule.ANGULAR_COMMON_4_0_0, Angular2TestModule.ANGULAR_FORMS_4_0_0)
     myFixture.configureByFiles("typeAttrWithForms.html", "typeAttrWithForms.ts")
     myFixture.moveToOffsetBySignature("<button <caret>>")
     myFixture.completeBasic()
@@ -948,7 +916,7 @@ class Angular2AttributesTest : Angular2CodeInsightFixtureTestCase() {
   }
 
   fun testInputTypeCompletion() {
-    configureLink(myFixture, Angular2TestModule.ANGULAR_FORMS_4_0_0)
+    myFixture.configureDependencies(Angular2TestModule.ANGULAR_FORMS_4_0_0)
     myFixture.configureByText("input-type.html", "<input type=\"<caret>\"")
     myFixture.completeBasic()
     UsefulTestCase.assertContainsElements(myFixture.getLookupElementStrings()!!,
@@ -1010,7 +978,7 @@ class Angular2AttributesTest : Angular2CodeInsightFixtureTestCase() {
   }
 
   fun testCdkDirectivesCompletion() {
-    configureCopy(myFixture, Angular2TestModule.ANGULAR_CDK_14_2_0)
+    myFixture.configureDependencies(Angular2TestModule.ANGULAR_CDK_14_2_0)
     myFixture.configureByFile(getTestName(true) + ".html")
     myFixture.completeBasic()
     myFixture.checkListByFile(myFixture.renderLookupItems(true, true), getTestName(true) + ".expected.txt", false)

@@ -7,7 +7,7 @@ import com.intellij.lang.ecmascript6.parsing.ES6Parser
 import com.intellij.lang.javascript.JSElementTypes
 import com.intellij.lang.javascript.JSStubElementTypes
 import com.intellij.lang.javascript.JSTokenTypes
-import com.intellij.lang.javascript.JavaScriptBundle
+import com.intellij.lang.javascript.JavaScriptCoreBundle
 import com.intellij.lang.javascript.parsing.JavaScriptParserBase
 import com.intellij.psi.tree.IElementType
 import org.jetbrains.vuejs.VueBundle
@@ -15,12 +15,12 @@ import org.jetbrains.vuejs.codeInsight.attributes.VueAttributeNameParser
 import org.jetbrains.vuejs.codeInsight.attributes.VueAttributeNameParser.VueAttributeInfo
 
 class VueJSExtraParser(
-  parser: ES6Parser<*, *, *, *>,
+  parser: ES6Parser,
   private val parseExpressionOptional: () -> Boolean,
   private val parseArgumentListNoMarker: () -> Unit,
   private val parseScriptGeneric: () -> Unit,
-) : JavaScriptParserBase<ES6Parser<*, *, *, *>>(parser) {
-  private val statementParser get() = myJavaScriptParser.statementParser
+) : JavaScriptParserBase<ES6Parser>(parser) {
+  private val statementParser get() = parser.statementParser
 
   fun parseEmbeddedExpression(root: IElementType, attributeInfo: VueAttributeInfo?, expressionContent: IElementType) {
     val rootMarker = builder.mark()
@@ -54,7 +54,7 @@ class VueJSExtraParser(
     if (!parseFilterOptional() && !builder.eof()) {
       val mark = builder.mark()
       builder.advanceLexer()
-      mark.error(JavaScriptBundle.message("javascript.parser.message.expected.expression"))
+      mark.error(JavaScriptCoreBundle.message("javascript.parser.message.expected.expression"))
       parseRest(true)
     }
   }
@@ -65,7 +65,7 @@ class VueJSExtraParser(
         builder.advanceLexer()
       }
       else if (!statementParser.parseExpressionStatement()) {
-        builder.error(JavaScriptBundle.message("javascript.parser.message.expected.expression"))
+        builder.error(JavaScriptCoreBundle.message("javascript.parser.message.expected.expression"))
         if (!builder.eof()) {
           builder.advanceLexer()
         }
@@ -79,7 +79,7 @@ class VueJSExtraParser(
       if (!builder.eof()) {
         builder.advanceLexer()
       }
-      mark.error(JavaScriptBundle.message("javascript.parser.message.expected.expression"))
+      mark.error(JavaScriptCoreBundle.message("javascript.parser.message.expected.expression"))
       parseRest(true)
     }
   }
@@ -96,7 +96,7 @@ class VueJSExtraParser(
           && builder.tokenType !== JSTokenTypes.OF_KEYWORD) {
         builder.advanceLexer()
       }
-      marker.error(JavaScriptBundle.message("javascript.parser.message.expected.identifier"))
+      marker.error(JavaScriptCoreBundle.message("javascript.parser.message.expected.identifier"))
     }
     if (builder.tokenType !== JSTokenTypes.IN_KEYWORD && builder.tokenType !== JSTokenTypes.OF_KEYWORD) {
       builder.error(VueBundle.message("vue.parser.message.expected.in.or.of"))
@@ -104,7 +104,7 @@ class VueJSExtraParser(
     else {
       builder.advanceLexer()
     }
-    myJavaScriptParser.expressionParser.parseExpression()
+    parser.expressionParser.parseExpression()
     vForExpr.done(VueJSElementTypes.V_FOR_EXPRESSION)
   }
 
@@ -114,8 +114,8 @@ class VueJSExtraParser(
 
   private fun parseParametersExpression(exprType: IElementType, @Suppress("SameParameterValue") paramType: IElementType) {
     val parametersList = builder.mark()
-    val functionParser = object : ES6FunctionParser<ES6Parser<*, *, *, *>>(myJavaScriptParser) {
-      override fun getParameterType(): IElementType = paramType
+    val functionParser = object : ES6FunctionParser<ES6Parser>(parser) {
+      override val parameterType: IElementType = paramType
     }
     var first = true
     while (!builder.eof()) {
@@ -137,7 +137,7 @@ class VueJSExtraParser(
       }
       else if (builder.tokenType === JSTokenTypes.DOT) {
         // incomplete ...args
-        builder.error(JavaScriptBundle.message("javascript.parser.message.expected.parameter.name"))
+        builder.error(JavaScriptCoreBundle.message("javascript.parser.message.expected.parameter.name"))
         while (builder.tokenType === JSTokenTypes.DOT) {
           builder.advanceLexer()
         }
@@ -164,11 +164,11 @@ class VueJSExtraParser(
           reported = true
           justReported = true
         }
-        if (!myJavaScriptParser.expressionParser.parseExpressionOptional()) {
+        if (!parser.expressionParser.parseExpressionOptional()) {
           if (!justReported) {
             val mark = builder.mark()
             builder.advanceLexer()
-            mark.error(JavaScriptBundle.message("javascript.parser.message.expected.expression"))
+            mark.error(JavaScriptCoreBundle.message("javascript.parser.message.expected.expression"))
           }
           else {
             builder.advanceLexer()
@@ -195,11 +195,11 @@ class VueJSExtraParser(
 
   private fun parseVariable(elementType: IElementType): Boolean {
     if (isIdentifierToken(builder.tokenType)) {
-      myJavaScriptParser.buildTokenElement(elementType)
+      parser.buildTokenElement(elementType)
       return true
     }
-    else if (myJavaScriptParser.functionParser.willParseDestructuringAssignment()) {
-      myJavaScriptParser.expressionParser.parseDestructuringElement(VueJSStubElementTypes.V_FOR_VARIABLE, false, false)
+    else if (parser.functionParser.willParseDestructuringAssignment()) {
+      parser.expressionParser.parseDestructuringElement(VueJSStubElementTypes.V_FOR_VARIABLE, false, false)
       return true
     }
     return false
@@ -215,13 +215,13 @@ class VueJSExtraParser(
       while (builder.tokenType == JSTokenTypes.COMMA && i < EXTRA_VAR_COUNT) {
         builder.advanceLexer()
         if (isIdentifierToken(builder.tokenType)) {
-          myJavaScriptParser.buildTokenElement(VueJSStubElementTypes.V_FOR_VARIABLE)
+          parser.buildTokenElement(VueJSStubElementTypes.V_FOR_VARIABLE)
         }
         i++
       }
     }
     if (builder.tokenType != JSTokenTypes.RPAR) {
-      builder.error(JavaScriptBundle.message("javascript.parser.message.expected.rparen"))
+      builder.error(JavaScriptCoreBundle.message("javascript.parser.message.expected.rparen"))
       while (!builder.eof()
              && builder.tokenType != JSTokenTypes.RPAR
              && builder.tokenType != JSTokenTypes.IN_KEYWORD

@@ -9,6 +9,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
 import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiRecursiveVisitor
 import com.intellij.psi.TokenType
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.containers.toArray
@@ -22,12 +23,12 @@ import org.intellij.terraform.config.patterns.TerraformPatterns.ModuleWithEmptyS
 import org.intellij.terraform.config.psi.TerraformElementGenerator
 import org.intellij.terraform.hcl.HCLBundle
 import org.intellij.terraform.hcl.psi.*
-import org.intellij.terraform.isTerraformPsiFile
+import org.intellij.terraform.isTerraformCompatiblePsiFile
 
 class HCLBlockMissingPropertyInspection : LocalInspectionTool() {
 
   override fun isAvailableForFile(file: PsiFile): Boolean {
-    return isTerraformPsiFile(file)
+    return isTerraformCompatiblePsiFile(file)
   }
 
   override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor {
@@ -160,7 +161,7 @@ internal class MissingPropertyVisitor(val holder: ProblemsHolder, val recursive:
 
   companion object {
     fun create(holder: ProblemsHolder, recursive: Boolean): PsiElementVisitor {
-      if (!isTerraformPsiFile(holder.file)) {
+      if (!isTerraformCompatiblePsiFile(holder.file)) {
         return EMPTY_VISITOR
       }
       return MissingPropertyVisitor(holder, recursive)

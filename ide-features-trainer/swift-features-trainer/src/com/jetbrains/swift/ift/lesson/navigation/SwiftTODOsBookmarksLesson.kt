@@ -103,9 +103,11 @@ class Navigation: UITableViewController {
 
     task {
       triggers("ActivateTODOToolWindow")
-      text(SwiftLessonsBundle.message("swift.navigation.todo.activate", action("ActivateTODOToolWindow")))
+      text(SwiftLessonsBundle.message("swift.navigation.todo.activate",
+                                      action("ActivateTODOToolWindow")))
     }
     task {
+      @Suppress("UnresolvedPluginConfigReference", "InjectedReferences") // no Action ID available
       triggers("com.intellij.ide.todo.SetTodoFilterAction$1")
       text(SwiftLessonsBundle.message("swift.navigation.todo.custom", icon(AllIcons.General.Filter)))
     }

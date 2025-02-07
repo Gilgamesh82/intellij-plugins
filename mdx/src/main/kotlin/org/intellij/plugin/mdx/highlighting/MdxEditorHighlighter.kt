@@ -1,6 +1,6 @@
 package org.intellij.plugin.mdx.highlighting
 
-import com.intellij.lang.javascript.DialectOptionHolder.JS_WITH_JSX
+import com.intellij.lang.javascript.DialectOptionHolder.Companion.JS_WITH_JSX
 import com.intellij.lang.javascript.dialects.ECMA6SyntaxHighlighterFactory
 import com.intellij.openapi.editor.colors.EditorColorsScheme
 import com.intellij.openapi.editor.ex.util.LayerDescriptor
@@ -9,10 +9,10 @@ import org.intellij.plugin.mdx.lang.parse.MdxTokenTypes
 import org.intellij.plugins.markdown.lang.MarkdownElementType
 import org.intellij.plugins.markdown.lang.MarkdownTokenTypes
 
-class MdxEditorHighlighter(colors: EditorColorsScheme)
+internal class MdxEditorHighlighter(colors: EditorColorsScheme)
   : LayeredLexerEditorHighlighter(MdxSyntaxHighlighter(), colors) {
   init {
-    val outerHighlighter = ECMA6SyntaxHighlighterFactory.ECMA6SyntaxHighlighter(JS_WITH_JSX, false)
+    val outerHighlighter = ECMA6SyntaxHighlighterFactory.ECMA6SyntaxHighlighter(JS_WITH_JSX)
     registerLayer(MarkdownElementType.platformType(MdxTokenTypes.JSX_BLOCK_CONTENT), LayerDescriptor(outerHighlighter, "\n;"))
     registerLayer(MarkdownTokenTypes.HTML_TAG, LayerDescriptor(outerHighlighter, ""))
   }

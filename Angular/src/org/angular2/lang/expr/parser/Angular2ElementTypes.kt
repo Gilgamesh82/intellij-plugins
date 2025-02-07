@@ -2,7 +2,6 @@
 package org.angular2.lang.expr.parser
 
 import com.intellij.lang.ASTNode
-import com.intellij.lang.javascript.JSElementTypes
 import com.intellij.lang.javascript.JSKeywordSets.IDENTIFIER_NAMES
 import com.intellij.lang.javascript.JSTokenTypes.STRING_LITERAL
 import com.intellij.lang.javascript.types.JSExpressionElementType
@@ -10,11 +9,12 @@ import com.intellij.psi.tree.ICompositeElementType
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.tree.TokenSet
 import org.angular2.lang.expr.Angular2Language
+import org.angular2.lang.expr.psi.Angular2TemplateBinding
 import org.angular2.lang.expr.psi.impl.*
 import org.jetbrains.annotations.NonNls
 import java.util.function.Function
 
-interface Angular2ElementTypes : JSElementTypes, Angular2StubElementTypes {
+interface Angular2ElementTypes: Angular2StubElementTypes {
 
   open class Angular2ElementType(@NonNls debugName: String,
                                  private val myClassConstructor: Function<Angular2ElementType, ASTNode>)
@@ -29,11 +29,11 @@ interface Angular2ElementTypes : JSElementTypes, Angular2StubElementTypes {
                                       classConstructor: Function<Angular2ElementType, ASTNode>)
     : Angular2ElementType(debugName, classConstructor), JSExpressionElementType
 
-  class Angular2TemplateBindingType(private val myKey: String, private val myVar: Boolean, private val myName: String?)
+  class Angular2TemplateBindingType(private val key: String, private val keyKind: Angular2TemplateBinding.KeyKind, private val name: String?)
     : IElementType("NG:TEMPLATE_BINDING_STATEMENT", Angular2Language, false), ICompositeElementType {
 
     override fun createCompositeNode(): ASTNode {
-      return Angular2TemplateBindingImpl(TEMPLATE_BINDING_STATEMENT, myKey, myVar, myName)
+      return Angular2TemplateBindingImpl(TEMPLATE_BINDING_STATEMENT, key, keyKind, name)
     }
   }
 
@@ -107,11 +107,11 @@ interface Angular2ElementTypes : JSElementTypes, Angular2StubElementTypes {
       Angular2ElementType("NG:BLOCK_PARAMETER_STATEMENT") { node -> Angular2BlockParameterImpl(node) }
 
     @JvmField
-    val PROPERTY_NAMES = TokenSet.orSet(IDENTIFIER_NAMES, TokenSet.create(STRING_LITERAL))
+    val PROPERTY_NAMES: TokenSet = TokenSet.orSet(IDENTIFIER_NAMES, TokenSet.create(STRING_LITERAL))
 
     @JvmStatic
-    fun createTemplateBindingStatement(key: String, isVar: Boolean, name: String?): IElementType {
-      return Angular2TemplateBindingType(key, isVar, name)
+    fun createTemplateBindingStatement(key: String, keyKind: Angular2TemplateBinding.KeyKind, name: String?): IElementType {
+      return Angular2TemplateBindingType(key, keyKind, name)
     }
 
     @JvmStatic

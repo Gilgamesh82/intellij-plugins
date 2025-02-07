@@ -1,4 +1,4 @@
-// Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.plugins.cucumber.inspections;
 
 import com.intellij.codeInsight.CodeInsightUtilCore;
@@ -28,7 +28,7 @@ public class CucumberCreateExamplesSectionFix implements LocalQuickFix {
   }
 
   @Override
-  public void applyFix(@NotNull final Project project, @NotNull ProblemDescriptor descriptor) {
+  public void applyFix(final @NotNull Project project, @NotNull ProblemDescriptor descriptor) {
     final GherkinScenarioOutlineImpl outline = (GherkinScenarioOutlineImpl) descriptor.getPsiElement();
 
     final GherkinFile featureFile = (GherkinFile)outline.getContainingFile();
@@ -74,8 +74,8 @@ public class CucumberCreateExamplesSectionFix implements LocalQuickFix {
     final GherkinTableRow headerRow = table.getHeaderRow();
     assert headerRow != null;
     final List<GherkinTableCell> cells = headerRow.getPsiCells();
-    final int firstCellOffset =  cells.size() > 0 && cells.get(0).getTextLength() > 0 ?
-                                 cells.get(0).getTextOffset() : headerRow.getTextOffset() + 1;
+    final int firstCellOffset = !cells.isEmpty() && cells.get(0).getTextLength() > 0 ?
+                                cells.get(0).getTextOffset() : headerRow.getTextOffset() + 1;
 
     final Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
     assert editor != null;

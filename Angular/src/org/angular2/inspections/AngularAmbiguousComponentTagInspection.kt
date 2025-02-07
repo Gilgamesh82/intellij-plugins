@@ -2,6 +2,7 @@
 package org.angular2.inspections
 
 import com.intellij.codeInspection.ProblemsHolder
+import com.intellij.lang.javascript.evaluation.JSTypeEvaluationLocationProvider.withTypeEvaluationLocation
 import com.intellij.psi.xml.XmlAttribute
 import com.intellij.psi.xml.XmlTag
 import com.intellij.util.ObjectUtils
@@ -22,22 +23,22 @@ class AngularAmbiguousComponentTagInspection : AngularHtmlLikeTemplateLocalInspe
     if (scope.importsOwner == null) {
       return
     }
-    val components = Angular2ApplicableDirectivesProvider(tag).matched
-      .filter { d -> d.isComponent && scope.contains(d) }
+    val components = Angular2ApplicableDirectivesProvider(tag, scope = scope).matched
+      .filter { d -> d.isComponent }
     val startTag = ObjectUtils.notNull(XmlTagUtil.getStartTagRange(tag)) { tag.textRange }
       .shiftLeft(tag.textOffset)
     if (isTemplateTag(tag)) {
       if (!components.isEmpty()) {
         holder.registerProblem(tag, startTag, Angular2Bundle.htmlMessage(
           "angular.inspection.ambiguous-component-tag.message.embedded",
-          renderEntityList(components)))
+          withTypeEvaluationLocation(tag) { renderEntityList(components) }))
       }
     }
     else {
       if (components.size > 1) {
         holder.registerProblem(tag, startTag, Angular2Bundle.htmlMessage(
           "angular.inspection.ambiguous-component-tag.message.many-components",
-          renderEntityList(components)))
+          withTypeEvaluationLocation(tag) { renderEntityList(components) }))
       }
     }
   }
@@ -47,12 +48,12 @@ class AngularAmbiguousComponentTagInspection : AngularHtmlLikeTemplateLocalInspe
                                      descriptor: Angular2AttributeDescriptor) {
     if (descriptor.info.type == Angular2AttributeType.TEMPLATE_BINDINGS && !isTemplateTag(attribute.parent)) {
       val scope = Angular2DeclarationsScope(attribute)
-      val components = Angular2ApplicableDirectivesProvider(Angular2TemplateBindings.get(attribute)).matched
-        .filter { d -> d.isComponent && scope.contains(d) }
+      val components = Angular2ApplicableDirectivesProvider(Angular2TemplateBindings.get(attribute), scope = scope).matched
+        .filter { d -> d.isComponent }
       if (!components.isEmpty()) {
         holder.registerProblem(attribute, Angular2Bundle.htmlMessage(
           "angular.inspection.ambiguous-component-tag.message.embedded",
-          renderEntityList(components)))
+          withTypeEvaluationLocation(attribute) { renderEntityList(components) }))
       }
     }
   }

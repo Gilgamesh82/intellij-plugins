@@ -92,11 +92,13 @@ class AngularCliAddDependencyAction : DumbAwareAction() {
     )
     val list = JBList(model)
     list.setCellRenderer(object : ColoredListCellRenderer<NodePackageBasicInfo>() {
-      override fun customizeCellRenderer(list: JList<out NodePackageBasicInfo>,
-                                         value: NodePackageBasicInfo,
-                                         index: Int,
-                                         selected: Boolean,
-                                         hasFocus: Boolean) {
+      override fun customizeCellRenderer(
+        list: JList<out NodePackageBasicInfo>,
+        value: NodePackageBasicInfo,
+        index: Int,
+        selected: Boolean,
+        hasFocus: Boolean,
+      ) {
         if (!selected && index % 2 == 0) {
           background = UIUtil.getDecoratedRowColor()
         }
@@ -175,8 +177,10 @@ class AngularCliAddDependencyAction : DumbAwareAction() {
     return ActionUpdateThread.BGT
   }
 
-  private class SelectCustomPackageDialog(private val myProject: Project,
-                                          private val myExistingPackages: Set<String>) : DialogWrapper(myProject) {
+  private class SelectCustomPackageDialog(
+    private val myProject: Project,
+    private val myExistingPackages: Set<String>,
+  ) : DialogWrapper(myProject) {
     private var myTextEditor: EditorTextField? = null
 
     val `package`: String
@@ -226,7 +230,7 @@ class AngularCliAddDependencyAction : DumbAwareAction() {
       }
       val result = ArrayList<NodePackageBasicInfo>()
       try {
-        NpmRegistryService.getInstance().findPackages(
+        NpmRegistryService.instance.findPackages(
           ProgressManager.getInstance().progressIndicator,
           NpmRegistryService.namePrefixSearch(prefix), 20, { true },
           { pkg ->
@@ -260,8 +264,10 @@ class AngularCliAddDependencyAction : DumbAwareAction() {
     private val LATEST = "latest"
 
     @JvmStatic
-    fun runAndShowConsoleLater(project: Project, cli: VirtualFile, packageName: String,
-                               packageVersion: String?, proposeLatestVersionIfNeeded: Boolean) {
+    fun runAndShowConsoleLater(
+      project: Project, cli: VirtualFile, packageName: String,
+      packageVersion: String?, proposeLatestVersionIfNeeded: Boolean,
+    ) {
       ApplicationManager.getApplication().executeOnPooledThread {
         if (project.isDisposed) {
           return@executeOnPooledThread
@@ -291,8 +297,10 @@ class AngularCliAddDependencyAction : DumbAwareAction() {
       }
     }
 
-    private fun runAndShowConsole(project: Project, cli: VirtualFile,
-                                  packageSpec: String, proposeLatestVersionIfNeeded: Boolean) {
+    private fun runAndShowConsole(
+      project: Project, cli: VirtualFile,
+      packageSpec: String, proposeLatestVersionIfNeeded: Boolean,
+    ) {
       if (project.isDisposed) {
         return
       }
@@ -307,7 +315,7 @@ class AngularCliAddDependencyAction : DumbAwareAction() {
         ApplicationManager.getApplication().executeOnPooledThread {
           val handler = NpmPackageProjectGenerator.generate(
             interpreter, NodePackage(module.virtualFile!!.path),
-            { pkg -> pkg.findBinFile(AngularCliProjectGenerator.NG_EXECUTABLE, null)!!.absolutePath },
+            { pkg -> pkg.findBinFilePath(AngularCliProjectGenerator.NG_EXECUTABLE)!!.toString() },
             cli, VfsUtilCore.virtualToIoFile(cli),
             project, { GistManager.getInstance().invalidateData() },
             Angular2Bundle.message("angular.action.ng-add.installing-for", packageSpec, cli.name),
@@ -330,8 +338,10 @@ class AngularCliAddDependencyAction : DumbAwareAction() {
 
     }
 
-    private fun installLatestIfFeasible(project: Project, cli: VirtualFile,
-                                        packageSpec: String) {
+    private fun installLatestIfFeasible(
+      project: Project, cli: VirtualFile,
+      packageSpec: String,
+    ) {
       if (project.isDisposed) {
         return
       }
@@ -358,18 +368,22 @@ class AngularCliAddDependencyAction : DumbAwareAction() {
       }
     }
 
-    private fun chooseCustomPackageAndInstall(project: Project,
-                                              cli: VirtualFile,
-                                              existingPackages: Set<String>) {
+    private fun chooseCustomPackageAndInstall(
+      project: Project,
+      cli: VirtualFile,
+      existingPackages: Set<String>,
+    ) {
       val dialog = SelectCustomPackageDialog(project, existingPackages)
       if (dialog.showAndGet()) {
         runAndShowConsole(project, cli, dialog.`package`, false)
       }
     }
 
-    private fun updateListAsync(list: JBList<NodePackageBasicInfo>,
-                                model: SortedListModel<NodePackageBasicInfo>,
-                                popup: JBPopup, existingPackages: Set<String>) {
+    private fun updateListAsync(
+      list: JBList<NodePackageBasicInfo>,
+      model: SortedListModel<NodePackageBasicInfo>,
+      popup: JBPopup, existingPackages: Set<String>,
+    ) {
       list.setPaintBusy(true)
       model.clear()
       ApplicationManager.getApplication().executeOnPooledThread {

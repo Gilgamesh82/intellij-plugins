@@ -50,6 +50,7 @@
   </extensionPoints>
 
   <extensions defaultExtensionNs="com.intellij">
+    <registryKey defaultValue="true" description="Use bundled Vue service" key="vue.language.server.bundled.enabled"/>
     <registryKey defaultValue="" description="Vue service version for downloading" key="vue.language.server.default.version"/>
     <dependencySupport kind="javascript" coordinate="npm:vue" displayName="Vue.js"/>
     <dependencySupport kind="javascript" coordinate="npm:nuxt" displayName="Nuxt"/>
@@ -77,7 +78,7 @@
     <psi.fileReferenceHelper implementation="org.jetbrains.vuejs.libraries.nuxt.codeInsight.NuxtFileReferenceHelper"/>
     <useScopeEnlarger implementation="org.jetbrains.vuejs.findUsages.VueUseScopeEnlarger"/>
     <implicitUsageProvider implementation="org.jetbrains.vuejs.codeInsight.refs.VueImplicitUsageProvider"/>
-    <platform.lsp.serverSupportProvider implementation="org.jetbrains.vuejs.lang.typescript.service.volar.VolarSupportProvider"/>
+    <platform.lsp.serverSupportProvider implementation="org.jetbrains.vuejs.lang.typescript.service.lsp.VueLspServerSupportProvider"/>
 
     <quoteHandler className="com.intellij.codeInsight.editorActions.HtmlQuoteHandler" fileType="Vue.js"/>
     <copyPastePostProcessor implementation="org.jetbrains.vuejs.codeInsight.imports.VueTemplateExpressionsCopyPasteProcessor"/>
@@ -124,10 +125,13 @@
 
     <!-- works in WebStorm and other SmallIDEs -->
     <directoryProjectGenerator implementation="org.jetbrains.vuejs.cli.VueCliProjectGenerator"/>
+    <directoryProjectGenerator implementation="org.jetbrains.vuejs.cli.NuxtProjectGenerator"/>
     <!-- works in IDEA -->
     <projectTemplatesFactory implementation="org.jetbrains.vuejs.cli.VueProjectTemplateFactory"/>
+    <projectTemplatesFactory implementation="org.jetbrains.vuejs.cli.NuxtProjectTemplateFactory"/>
     <!-- works in new IDEA wizard -->
     <moduleBuilder builderClass="org.jetbrains.vuejs.cli.VueCLIProjectModuleBuilder"/>
+    <moduleBuilder builderClass="org.jetbrains.vuejs.cli.NuxtProjectModuleBuilder"/>
 
     <workspaceModel.fileIndexContributor implementation="org.jetbrains.vuejs.libraries.nuxt.library.NuxtFolderLibraryContributor"/>
     <postStartupActivity implementation="org.jetbrains.vuejs.libraries.nuxt.library.NuxtFolderLibraryStartupActivity"/>
@@ -368,7 +372,7 @@
     <elementScopeProvider implementation="org.jetbrains.vuejs.VueElementResolveScopeProvider"/>
     <indexedFileTypeProvider implementation="org.jetbrains.vuejs.lang.html.VueIndexedFileTypeProvider"/>
 
-    <frameworkIndexingHandler implementation="org.jetbrains.vuejs.index.VueFrameworkHandler" version="30"/>
+    <frameworkIndexingHandler implementation="org.jetbrains.vuejs.index.VueFrameworkHandler" version="32"/>
     <frameworkIndexingHandler implementation="org.jetbrains.vuejs.libraries.vuex.index.VuexFrameworkHandler" version="7"/>
     <frameworkIndexingHandler implementation="org.jetbrains.vuejs.libraries.templateLoader.TemplateLoaderFrameworkHandler" version="1"/>
 
@@ -402,6 +406,7 @@
     <scanningFileListenerContributor implementation="org.jetbrains.vuejs.libraries.nuxt.library.NuxtFolderScanningListenerContributor"/>
     <moduleExportsProvider id="vue" implementation="org.jetbrains.vuejs.codeInsight.imports.VueModuleExportsProvider"/>
     <componentUsageProvider language="Vue" implementationClass="org.jetbrains.vuejs.codeInsight.hints.VueComponentUsageProvider"/>
+    <typeScriptCompilerTypePatcher implementation="org.jetbrains.vuejs.libraries.nuxt.codeInsight.NuxtTypeScriptTypePatcher"/>
   </extensions>
 
   <extensions defaultExtensionNs="intellij.webpack">

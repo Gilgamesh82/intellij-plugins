@@ -1,4 +1,4 @@
-// Copyright 2000-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.github.masahirosuzuka.PhoneGapIntelliJPlugin.ProjectBuilder;
 
 import com.github.masahirosuzuka.PhoneGapIntelliJPlugin.PhoneGapBundle;
@@ -29,7 +29,7 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-import java.io.File;
+import java.nio.file.Path;
 import java.util.List;
 
 import static com.github.masahirosuzuka.PhoneGapIntelliJPlugin.PhoneGapStartupActivity.EXCLUDED_WWW_DIRECTORY;
@@ -51,8 +51,8 @@ public final class CordovaProjectGenerator extends NpmPackageProjectGenerator {
   @Override
   protected String[] generatorArgs(Project project, VirtualFile dir, Settings settings) {
     NodePackage aPackage = settings.myPackage;
-    File file = settings.myPackage.findBinFile(aPackage.getName(), null);
-    String path = file == null ? aPackage.getName() : file.getPath();
+    Path file = settings.myPackage.findBinFilePath(aPackage.getName());
+    String path = file == null ? aPackage.getName() : file.toString();
     PhoneGapCommandLine commandLine = new PhoneGapCommandLine(path, dir.getPath());
 
     PropertiesComponent propertiesComponent = PropertiesComponent.getInstance(project);
@@ -75,16 +75,13 @@ public final class CordovaProjectGenerator extends NpmPackageProjectGenerator {
     return "Cordova";
   }
 
-  @Nls
-  @NotNull
   @Override
-  public String getName() {
+  public @Nls @NotNull String getName() {
     return PhoneGapBundle.message("phonegap.app.name");
   }
 
-  @NotNull
   @Override
-  protected String packageName() {
+  protected @NotNull String packageName() {
     throw new IncorrectOperationException();
   }
 
@@ -148,9 +145,8 @@ public final class CordovaProjectGenerator extends NpmPackageProjectGenerator {
     return PhoneGapIcons.PhonegapIntegration;
   }
 
-  @NlsContexts.DetailedDescription
   @Override
-  public String getDescription() {
+  public @NlsContexts.DetailedDescription String getDescription() {
     return PhoneGapBundle.message("phonegap.app.name.description");
   }
 }

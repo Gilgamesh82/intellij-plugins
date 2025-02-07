@@ -1,9 +1,10 @@
-// Copyright 2000-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.coldFusion.model.parsers;
 
 import com.intellij.coldFusion.CfmlBundle;
 import com.intellij.coldFusion.model.CfmlUtil;
 import com.intellij.coldFusion.model.lexer.CfscriptTokenTypes;
+import com.intellij.coldFusion.model.psi.stubs.CfmlStubElementTypes;
 import com.intellij.lang.ASTNode;
 import com.intellij.lang.PsiBuilder;
 import com.intellij.lang.PsiParser;
@@ -34,7 +35,7 @@ public class CfmlParser implements PsiParser {
 
   public static IElementType getElementTypeForTag(@NotNull String tagName) {
     if ("cfcomponent".equals(StringUtil.toLowerCase(tagName)) || "cfinterface".equals(StringUtil.toLowerCase(tagName))) {
-      return CfmlElementTypes.COMPONENT_TAG;
+      return CfmlStubElementTypes.COMPONENT_TAG;
     }
     else if ("cffunction".equals(StringUtil.toLowerCase(tagName))) {
       return CfmlElementTypes.FUNCTION_TAG;
@@ -61,8 +62,7 @@ public class CfmlParser implements PsiParser {
   }
 
   @Override
-  @NotNull
-  public ASTNode parse(final IElementType root, final PsiBuilder builder) {
+  public @NotNull ASTNode parse(final IElementType root, final PsiBuilder builder) {
     Stack<Tag> tagNamesStack = new Stack<>();
     // builder.setDebugMode(true);
     final PsiBuilder.Marker marker = builder.mark();
@@ -378,8 +378,7 @@ public class CfmlParser implements PsiParser {
     }
   }
 
-  @Nullable
-  private static String swallowClosing(PsiBuilder builder) {
+  private static @Nullable String swallowClosing(PsiBuilder builder) {
     if (compareAndEat(builder, LSLASH_ANGLEBRACKET)) {
       String tagName = builder.getTokenText();
       if (compareAndEat(builder, CF_TAG_NAME) && compareAndEat(builder, CLOSER)) {
@@ -415,6 +414,7 @@ public class CfmlParser implements PsiParser {
   }
   */
 
+  @Override
   public String toString() {
     return "CfmlParser";
   }

@@ -1,0 +1,64 @@
+### auto-generated section `build intellij.flex.tests` start
+load("@rules_java//java:defs.bzl", "java_library")
+load("@rules_jvm//:jvm.bzl", "jvm_library", "jvm_test")
+
+java_library(
+  name = "tests",
+  visibility = ["//visibility:public"]
+)
+
+jvm_library(
+  name = "tests_test_lib",
+  visibility = ["//visibility:public"],
+  srcs = glob(["testSrc/**/*.kt", "testSrc/**/*.java"], allow_empty = True),
+  deps = [
+    "//plugins/JavaScriptLanguage:javascript-tests_test_lib",
+    "//plugins/JavaScriptLanguage:javascript-testFramework",
+    "//plugins/JavaScriptLanguage:javascript-tests-ex_test_lib",
+    "//plugins/uml:diagram-impl",
+    "//contrib/flex",
+    "//plugins/JavaScriptLanguage/javascript-parser",
+    "//CSS/frontback/css-api:css-frontback",
+    "//plugins/JavaScriptLanguage:javascript-impl",
+    "//CSS:css",
+    "@community//spellchecker",
+    "@community//spellchecker:spellchecker_test_lib",
+    "@lib//:assert_j",
+    "//CSS/impl:css-impl",
+    "@community//platform/testFramework",
+    "@community//platform/testFramework:testFramework_test_lib",
+    "//CSS/css-psi-impl:css-psi",
+    "//contrib/flex/flex-shared:shared",
+    "//plugins/JavaScriptLanguage:javascript",
+    "@community//platform/util:util-tests_test_lib",
+    "@community//platform/editor-ui-ex:editor-ex",
+    "//plugins/JSIntentionPowerPack:javascript-intentions",
+    "//plugins/JSIntentionPowerPack:javascript-intentions_test_lib",
+    "@community//platform/smRunner",
+    "@community//platform/smRunner:smRunner_test_lib",
+    "@community//platform/testFramework/extensions:testExtensions",
+    "//plugins/uml:diagram-tests_test_lib",
+    "@community//plugins/performanceTesting/core:performanceTesting",
+    "@community//plugins/performanceTesting/core:performanceTesting_test_lib",
+    "@community//platform/core-ui",
+    "@community//plugins/properties/properties-psi-api:psi",
+    "@community//platform/code-style-impl:codeStyle-impl",
+    "@community//platform/platform-util-io:ide-util-io",
+    "@community//java/testFramework",
+    "@community//plugins/maven/testFramework",
+    "@community//java/java-impl-refactorings:impl-refactorings",
+    "@community//platform/util/jdom",
+    "//plugins/yourkit:performanceTesting-yourkit",
+    "@community//platform/util/nanoxml",
+    "@community//tools/intellij.tools.ide.metrics.benchmark:ide-metrics-benchmark",
+    "@community//tools/intellij.tools.ide.metrics.benchmark:ide-metrics-benchmark_test_lib",
+    "@community//platform/structuralsearch:structuralSearch-tests_test_lib",
+    "@community//platform/structuralsearch:structuralSearch",
+  ]
+)
+
+jvm_test(
+  name = "tests_test",
+  runtime_deps = [":tests_test_lib"]
+)
+### auto-generated section `build intellij.flex.tests` end

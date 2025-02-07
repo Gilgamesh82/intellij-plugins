@@ -1,4 +1,4 @@
-// Copyright 2000-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.javascript.karma.server;
 
 import com.google.common.base.Splitter;
@@ -7,6 +7,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.intellij.javascript.karma.KarmaConfig;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.util.io.NioFiles;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.util.ObjectUtils;
 import com.intellij.util.containers.ContainerUtil;
@@ -15,11 +16,9 @@ import com.intellij.webcore.util.JsonUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -55,8 +54,7 @@ public class KarmaServerState {
     myServer.registerStreamEventHandler(new ConfigHandler(configurationFilePath, workingDirectory));
   }
 
-  @NotNull
-  private static String findBrowsers(@NotNull String karmaOptions) {
+  private static @NotNull String findBrowsers(@NotNull String karmaOptions) {
     String singleOptionPrefix = "--browsers=";
     List<String> options = ParametersListUtil.parse(karmaOptions);
     Optional<String> singleOption = options.stream().filter(s -> s.startsWith(singleOptionPrefix)).findFirst();
@@ -70,8 +68,7 @@ public class KarmaServerState {
     return "";
   }
 
-  @Nullable
-  private static List<String> parseBrowsers(@NotNull String browsersStr) {
+  private static @Nullable List<String> parseBrowsers(@NotNull String browsersStr) {
     if (StringUtil.isEmptyOrSpaces(browsersStr)) {
       return null;
     }
@@ -126,8 +123,7 @@ public class KarmaServerState {
     return myBoundServerPort.get();
   }
 
-  @Nullable
-  public KarmaConfig getKarmaConfig() {
+  public @Nullable KarmaConfig getKarmaConfig() {
     return myConfig;
   }
 
@@ -153,8 +149,7 @@ public class KarmaServerState {
     updateBrowsersReadyStatus();
   }
 
-  @Nullable
-  private static String parseFailedToStartBrowser(@NotNull String line) {
+  private static @Nullable String parseFailedToStartBrowser(@NotNull String line) {
     for (String[] pattern : FAILED_TO_START_BROWSER_PATTERNS) {
       String failedToStartBrowser = getInnerSubstring(line, pattern[0], pattern[1]);
       if (failedToStartBrowser != null) {
@@ -178,8 +173,7 @@ public class KarmaServerState {
     return -1;
   }
 
-  @Nullable
-  private static String getInnerSubstring(@NotNull String str, @NotNull String prefix, @NotNull String suffix) {
+  private static @Nullable String getInnerSubstring(@NotNull String str, @NotNull String prefix, @NotNull String suffix) {
     if (str.startsWith(prefix) && str.endsWith(suffix) && prefix.length() + suffix.length() <= str.length()) {
       return str.substring(prefix.length(), str.length() - suffix.length());
     }
@@ -194,9 +188,8 @@ public class KarmaServerState {
       myEventType = eventType;
     }
 
-    @NotNull
     @Override
-    public String getEventType() {
+    public @NotNull String getEventType() {
       return myEventType;
     }
 
@@ -219,21 +212,22 @@ public class KarmaServerState {
 
   private class ConfigHandler implements StreamEventHandler {
 
-    private final File myConfigurationFileDir;
+    private final @NotNull String myConfigurationFileDir;
 
-    public ConfigHandler(@NotNull String configurationFilePath, @NotNull String workingDirectory) {
-      File configFile = new File(configurationFilePath);
-      if (configFile.isFile()) {
-        myConfigurationFileDir = configFile.getParentFile();
+    ConfigHandler(@NotNull String configurationFilePath, @NotNull String workingDirectory) {
+      Path configFile = NioFiles.toPath(configurationFilePath);
+      String configFileDir = null;
+      if (configFile != null && Files.isRegularFile(configFile)) {
+        Path parent = configFile.getParent();
+        if (parent != null) {
+          configFileDir = parent.toAbsolutePath().toString();
+        }
       }
-      else {
-        myConfigurationFileDir = new File(workingDirectory);
-      }
+      myConfigurationFileDir = Objects.requireNonNullElse(configFileDir, workingDirectory);
     }
 
-    @NotNull
     @Override
-    public String getEventType() {
+    public @NotNull String getEventType() {
       return "configFile";
     }
 
@@ -244,9 +238,8 @@ public class KarmaServerState {
   }
 
   private class BrowserCapturingFailedEventHandler implements StreamEventHandler {
-    @NotNull
     @Override
-    public String getEventType() {
+    public @NotNull String getEventType() {
       return "browserCapturingFailed";
     }
 

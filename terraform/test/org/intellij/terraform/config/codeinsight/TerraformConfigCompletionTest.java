@@ -1,4 +1,4 @@
-// Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.intellij.terraform.config.codeinsight;
 
 import com.intellij.codeInsight.completion.CompletionType;
@@ -17,14 +17,14 @@ import static org.intellij.terraform.config.CompletionTestCase.Matcher.*;
 @SuppressWarnings({"ArraysAsListWithZeroOrOneArgument", "RedundantThrows"})
 public class TerraformConfigCompletionTest extends TFBaseCompletionTestCase {
 
-  private static final int ENTRIES_LIST_SIZE = 1000; //x2 to the default registry value
+  private static final int ENTRIES_LIST_SIZE = 900; //almost x2 to the default registry value
 
   private static final Set<ProviderTier> tiers = Set.of(ProviderTier.TIER_BUILTIN, ProviderTier.TIER_OFFICIAL, ProviderTier.TIER_LOCAL);
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    Registry.get("ide.completion.variant.limit").setValue(ENTRIES_LIST_SIZE * 2, getTestRootDisposable());
+    Registry.get("ide.completion.variant.limit").setValue((ENTRIES_LIST_SIZE + 100) * 2, getTestRootDisposable());
   }
 
   @Override
@@ -829,13 +829,60 @@ public class TerraformConfigCompletionTest extends TFBaseCompletionTestCase {
       resource "aws_ec2_host<caret>"
       """);
     LookupElement[] lookupElements = myFixture.complete(CompletionType.BASIC, 2);
-    assertEquals(3, lookupElements.length);
+    assertEquals(4, lookupElements.length);
     Set<String> lookupStrings = Arrays.stream(lookupElements).map(el -> {
       ResourceType resourceType = (ResourceType)el.getObject();
       String name = resourceType.getType();
       String provider = resourceType.getProvider().getFullName();
       return "%s %s".formatted(name, provider);
     }).collect(Collectors.toSet());
-    assertEquals(lookupStrings, Set.of("aws_ec2_host hashicorp/aws", "aws_ec2_host msalman899/aws", "awscc_ec2_host hashicorp/awscc"));
+    assertEquals(lookupStrings, Set.of("aws_ec2_host jandillenkofer/aws","aws_ec2_host hashicorp/aws", "aws_ec2_host msalman899/aws", "awscc_ec2_host hashicorp/awscc"));
   }
+
+  public void testTerraformBlockCompletion() {
+    myFixture.configureByText("main.tf", """ 
+      terraform {
+        <caret>
+      }
+      """);
+    myFixture.testCompletionVariants("main.tf", "backend", "cloud", "experiments", "required_providers", "required_version");
+  }
+
+  public void testTerraformBlockCompletionBackend() {
+    myFixture.configureByText("main.tf", """ 
+      terraform {
+        backend "<caret>" {}
+      }
+      """);
+    TypeModel model = TypeModelProvider.getGlobalModel();
+    String[] backends = model.getBackends().stream().map(e -> e.getType()).toArray(String[]::new);
+    myFixture.testCompletionVariants("main.tf", backends);
+  }
+
+  public void testProviderFunctionsCompletion() {
+    doBasicCompletionTest(
+      """
+      resource "kubernetes_manifest" "example" {
+        manifest = manifest_d<caret>
+      }
+      """, 2, "provider::kubernetes::manifest_decode", "provider::kubernetes::manifest_decode_multi"
+    );
+
+    doBasicCompletionTest(
+      """
+      locals {
+        tfvars = decode_tf<caret>
+      }
+      """, 1, "provider::terraform::decode_tfvars"
+    );
+
+    doBasicCompletionTest(
+      """
+      resource "some_resource" "name" {
+        enabled = assert<caret>
+      }
+      """, "provider::assert::true"
+    );
+  }
+
 }

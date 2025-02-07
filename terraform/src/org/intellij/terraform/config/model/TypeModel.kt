@@ -36,7 +36,8 @@ import org.intellij.terraform.config.Constants.HCL_WORKSPACES_BLOCK_IDENTIFIER
 import org.intellij.terraform.config.model.local.LocalProviderNamesService
 import org.intellij.terraform.config.patterns.TerraformPatterns
 import org.intellij.terraform.hcl.psi.HCLBlock
-import org.intellij.terraform.isTerraformPsiFile
+import org.intellij.terraform.isTerraformCompatiblePsiFile
+import org.intellij.terraform.opentofu.model.EncryptionBlockType
 
 enum class ProviderTier(val label: String) {
   TIER_BUILTIN("builtin"),
@@ -59,12 +60,14 @@ class TypeModel(
   providers: List<ProviderType> = emptyList(),
   provisioners: List<ProvisionerType> = emptyList(),
   backends: List<BackendType> = emptyList(),
-  functions: List<Function> = emptyList(),
+  functions: List<TfFunction> = emptyList(),
+  providerDefinedFunctions: List<TfFunction> = emptyList()
 ) {
 
   val provisioners: List<ProvisionerType> = provisioners.sortedBy { it.type }
   val backends: List<BackendType> = backends.sortedBy { it.type }
-  val functions: List<Function> = functions.sortedBy { it.name }
+  val functions: List<TfFunction> = functions.sortedBy { it.name }
+  val providerDefinedFunctions: List<TfFunction> = providerDefinedFunctions.sortedBy { it.name }
 
   val providersByFullName: Map<String, ProviderType>
   val resourcesByProvider: Map<String, List<ResourceType>>
@@ -83,12 +86,12 @@ class TypeModel(
 
     val loadedProviders = providersByFullName.values.toSet()
 
-    resourcesByProvider = resources.filter { it.provider in loadedProviders }.groupBy { it.provider.fullName }
-    datasourcesByProvider = dataSources.filter { it.provider in loadedProviders }.groupBy { it.provider.fullName }
+    resourcesByProvider = resources.filter { it.provider in loadedProviders }.groupBy { it.provider.fullName.lowercase() }
+    datasourcesByProvider = dataSources.filter { it.provider in loadedProviders }.groupBy { it.provider.fullName.lowercase() }
 
     providerDefaultPrefixes = providersByFullName.mapNotNull { (name, provider) ->
-      val prefix = getDefaultPrefix(resourcesByProvider[provider.fullName]) ?: getDefaultPrefix(datasourcesByProvider[provider.fullName])
-      prefix?.let { provider.fullName to it }
+      val prefix = getDefaultPrefix(resourcesByProvider[name]) ?: getDefaultPrefix(datasourcesByProvider[name])
+      prefix?.let { name to it }
     }.toMap()
   }
 
@@ -246,6 +249,7 @@ class TypeModel(
       TerraformRequiredVersion,
       PropertyType("experiments", Types.Array),
       BlockType(HCL_TERRAFORM_REQUIRED_PROVIDERS),
+      EncryptionBlockType(),
       Cloud,
       AbstractBackend
     ).toMap())
@@ -284,12 +288,12 @@ class TypeModel(
     fun collectProviderLocalNames(psiElement: PsiElement): Map<String, String> {
       val providerNamesService = LocalProviderNamesService.getInstance()
       val gists = getContainingDir(psiElement)?.childrenOfType<PsiFile>()
-        ?.filter { file -> isTerraformPsiFile(file) }
+        ?.filter { file -> isTerraformCompatiblePsiFile(file) }
         ?.map { providerNamesService.providersNamesGist.getFileData(it) } ?: return emptyMap<String, String>()
       return gists.flatMap { it.entries }.associate { it.key to it.value }
     }
 
-    fun getContainingDir(psiElement: PsiElement?): PsiDirectory? {
+    private fun getContainingDir(psiElement: PsiElement?): PsiDirectory? {
       val containingDir = psiElement?.let { getContainingFile(it)?.parent } ?: return null
       return if (containingDir.isDirectory) containingDir else null
     }
@@ -327,7 +331,7 @@ class TypeModel(
     val providerFullName = localNames[providerShortName]
            ?: Constants.OFFICIAL_PROVIDERS_NAMESPACE.map { "$it/$providerShortName" }.firstOrNull { providersByFullName.containsKey(it) }
            ?: "hashicorp/$providerShortName" //The last resort
-    return providerFullName
+    return providerFullName.lowercase()
   }
 
   fun getResourceType(name: String, psiElement: PsiElement? = null): ResourceType? =
@@ -346,7 +350,7 @@ class TypeModel(
 
   fun getProviderType(name: String, psiElement: PsiElement? = null): ProviderType? {
     val providerName = getProviderNameForIdentifier(name, psiElement)
-    return providersByFullName[providerName.lowercase()]
+    return providersByFullName[providerName]
   }
 
   fun getProvisionerType(name: String): ProvisionerType? {
@@ -357,7 +361,7 @@ class TypeModel(
     return backends.findBinary(name) { it.type }
   }
 
-  fun getFunction(name: String): Function? {
+  fun getFunction(name: String): TfFunction? {
     return functions.findBinary(name) { it.name }
   }
 
@@ -391,9 +395,9 @@ class TypeModel(
     return null
   }
 
-  fun allResources(): Iterable<ResourceType> = resourcesByProvider.values.flatten()
-  fun allDatasources(): Iterable<DataSourceType> = datasourcesByProvider.values.flatten()
-  fun allProviders(): Iterable<ProviderType> = providersByFullName.values
+  fun allResources(): Sequence<ResourceType> = resourcesByProvider.values.asSequence().flatten()
+  fun allDatasources(): Sequence<DataSourceType> = datasourcesByProvider.values.asSequence().flatten()
+  fun allProviders(): Sequence<ProviderType> = providersByFullName.values.asSequence().asSequence()
 }
 
 fun Collection<PropertyOrBlockType>.toMap(): Map<String, PropertyOrBlockType> {

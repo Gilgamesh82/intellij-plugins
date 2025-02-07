@@ -38,19 +38,19 @@ public class PerforceConnectionManager implements PerforceConnectionManagerI {
   private boolean isInitializing;
 
   public PerforceConnectionManager(Project project) {
-    myNotifier = project.getService(PerforceConnectionProblemsNotifier.class);
+    myNotifier = PerforceConnectionProblemsNotifier.getInstance(project);
     mySettings = PerforceSettings.getSettings(project);
     myProject = project;
   }
 
+  @Override
   public boolean isInitialized() {
     synchronized (myLock) {
       return myConnectionMapper != null;
     }
   }
 
-  @NotNull
-  private PerforceConnectionMapper getConnectionMapper() {
+  private @NotNull PerforceConnectionMapper getConnectionMapper() {
     synchronized (myLock) {
       if (myConnectionMapper != null) {
         return myConnectionMapper;
@@ -59,8 +59,7 @@ public class PerforceConnectionManager implements PerforceConnectionManagerI {
     return initialize();
   }
 
-  @NotNull
-  private PerforceConnectionMapper initialize() {
+  private @NotNull PerforceConnectionMapper initialize() {
     PerforceConnectionMapper mapper;
     if (isSingletonConnectionUsed()) {
       mapper = SingletonConnection.getInstance(myProject);
@@ -82,8 +81,7 @@ public class PerforceConnectionManager implements PerforceConnectionManagerI {
   }
 
   @Override
-  @Nullable
-  public PerforceMultipleConnections getMultipleConnectionObject() {
+  public @Nullable PerforceMultipleConnections getMultipleConnectionObject() {
     final PerforceConnectionMapper mapper = getConnectionMapper();
     return mapper instanceof PerforceMultipleConnections ? (PerforceMultipleConnections)mapper : null;
   }
@@ -92,9 +90,8 @@ public class PerforceConnectionManager implements PerforceConnectionManagerI {
     return project.getService(PerforceConnectionManagerI.class);
   }
 
-  @NotNull
   @Override
-  public Map<VirtualFile, P4Connection> getAllConnections() {
+  public @NotNull Map<VirtualFile, P4Connection> getAllConnections() {
     return getConnectionMapper().getAllConnections();
   }
 
@@ -124,8 +121,7 @@ public class PerforceConnectionManager implements PerforceConnectionManagerI {
     return myProject;
   }
 
-  @Nullable
-  public static VirtualFile findNearestLiveParentFor(File ioFile) {
+  public static @Nullable VirtualFile findNearestLiveParentFor(File ioFile) {
     do {
       VirtualFile parent = LocalFileSystem.getInstance().findFileByIoFile(ioFile);
       if (parent != null) return parent;
@@ -136,8 +132,7 @@ public class PerforceConnectionManager implements PerforceConnectionManagerI {
   }
 
   @Override
-  @Nullable
-  public P4Connection getConnectionForFile(@NotNull File file) {
+  public @Nullable P4Connection getConnectionForFile(@NotNull File file) {
     PerforceConnectionMapper mapper = getConnectionMapper();
     if (mapper instanceof SingletonConnection) {
       if (LOG.isDebugEnabled()) {
@@ -161,7 +156,7 @@ public class PerforceConnectionManager implements PerforceConnectionManagerI {
   }
 
   @Override
-  public P4Connection getConnectionForFile(@NotNull final VirtualFile file) {
+  public P4Connection getConnectionForFile(final @NotNull VirtualFile file) {
     // todo : also use client roots information
     return getConnectionMapper().getConnection(file);
   }
@@ -176,7 +171,8 @@ public class PerforceConnectionManager implements PerforceConnectionManagerI {
     busConnection.subscribe(WorkspaceModelTopics.CHANGED, new MyContentRootChangeListener());
     busConnection.subscribe(ProjectLevelVcsManager.VCS_CONFIGURATION_CHANGED, this::updateConnections);
 
-    VirtualFileManager.getInstance().addVirtualFileListener(new PerforceP4ConfigVirtualFileListener(this, myProject), parentDisposable);
+    VirtualFileManager.getInstance()
+      .addVirtualFileListener(new PerforceP4ConfigVirtualFileListener(this, myProject, parentDisposable), parentDisposable);
     updateConnections();
   }
 
@@ -190,7 +186,7 @@ public class PerforceConnectionManager implements PerforceConnectionManagerI {
   }
 
   @Override
-  public boolean isUnderProjectConnections(@NotNull final File file) {
+  public boolean isUnderProjectConnections(final @NotNull File file) {
     Set<VirtualFile> allRoots = getConnectionMapper().getAllConnections().keySet();
     return ContainerUtil.or(allRoots, root -> FileUtil.isAncestor(VfsUtilCore.virtualToIoFile(root), file, false));
   }

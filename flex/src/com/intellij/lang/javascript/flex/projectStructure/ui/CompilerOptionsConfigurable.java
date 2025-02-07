@@ -6,6 +6,7 @@ import com.intellij.flex.model.bc.BuildConfigurationNature;
 import com.intellij.flex.model.bc.CompilerOptionInfo;
 import com.intellij.flex.model.bc.ValueSource;
 import com.intellij.icons.AllIcons;
+import com.intellij.ide.IdeCoreBundle;
 import com.intellij.lang.javascript.flex.FlexBundle;
 import com.intellij.lang.javascript.flex.FlexUtils;
 import com.intellij.lang.javascript.flex.projectStructure.FlexProjectLevelCompilerOptionsHolder;
@@ -35,7 +36,6 @@ import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.ui.*;
 import com.intellij.ui.navigation.Place;
@@ -68,8 +68,8 @@ import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.List;
 import java.util.*;
+import java.util.List;
 
 public final class CompilerOptionsConfigurable extends NamedConfigurable<CompilerOptions> implements Place.Navigator {
   public static final String CONDITIONAL_COMPILER_DEFINITION_NAME = "FlexCompilerOptions.ConditionalCompilerDefinitionName";
@@ -302,7 +302,7 @@ public final class CompilerOptionsConfigurable extends NamedConfigurable<Compile
       }
     };
 
-    myConfigFileTextWithBrowse.addBrowseFolderListener(null, null, myProject, FlexUtils.createFileChooserDescriptor("xml"));
+    myConfigFileTextWithBrowse.addBrowseFolderListener(myProject, FlexUtils.createFileChooserDescriptor("xml"));
     myConfigFileTextWithBrowse.getTextField().getDocument().addDocumentListener(new DocumentAdapter() {
       @Override
       protected void textChanged(final @NotNull DocumentEvent e) {
@@ -582,7 +582,7 @@ public final class CompilerOptionsConfigurable extends NamedConfigurable<Compile
       }
       final StringBuilder b = new StringBuilder();
       for (String entry : StringUtil.split(rawValue, CompilerOptionInfo.LIST_ENTRIES_SEPARATOR)) {
-        if (b.length() > 0) b.append(", ");
+        if (!b.isEmpty()) b.append(", ");
         b.append(entry, 0, entry.indexOf(CompilerOptionInfo.LIST_ENTRY_PARTS_SEPARATOR));
       }
 
@@ -602,7 +602,7 @@ public final class CompilerOptionsConfigurable extends NamedConfigurable<Compile
       private final JCheckBox myCheckBox = new JCheckBox();
 
       {
-        myTextWithBrowse.addBrowseFolderListener(null, null, myProject, myFileChooserDescriptor);
+        myTextWithBrowse.addBrowseFolderListener(myProject, myFileChooserDescriptor);
 
         myCheckBox.addActionListener(new ActionListener() {
           @Override
@@ -975,30 +975,17 @@ public final class CompilerOptionsConfigurable extends NamedConfigurable<Compile
   }
 
   static class ExtensionAwareFileChooserDescriptor extends FileChooserDescriptor {
-    private String @Nullable [] myAllowedExtensions;
-
     ExtensionAwareFileChooserDescriptor() {
       super(true, false, true, true, false, false);
     }
 
-    @Override
-    public boolean isFileVisible(final VirtualFile file, final boolean showHiddenFiles) {
-      return super.isFileVisible(file, showHiddenFiles) &&
-             (file.isDirectory() || isAllowedExtension(file.getExtension()));
-    }
-
-    private boolean isAllowedExtension(final String extension) {
-      if (myAllowedExtensions == null) return true;
-
-      for (String allowedExtension : myAllowedExtensions) {
-        if (allowedExtension.equalsIgnoreCase(extension)) return true;
+    public void setAllowedExtensions(String @Nullable ... extensions) {
+      if (extensions != null) {
+        withExtensionFilter(IdeCoreBundle.message("file.chooser.files.label", extensions[0]), extensions);
       }
-
-      return false;
-    }
-
-    public void setAllowedExtensions(final String @Nullable ... allowedExtensions) {
-      myAllowedExtensions = allowedExtensions;
+      else {
+        withoutExtensionFilter();
+      }
     }
   }
 
@@ -1057,4 +1044,3 @@ public final class CompilerOptionsConfigurable extends NamedConfigurable<Compile
     return FlexBundle.message("bc.tab.compiler.options.display.name");
   }
 }
-

@@ -6,7 +6,7 @@ import com.intellij.codeInspection.ProblemDescriptor
 import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ex.ProblemDescriptorImpl
 import com.intellij.lang.injection.InjectedLanguageManager
-import com.intellij.lang.typescript.compiler.TypeScriptService
+import com.intellij.lang.typescript.compiler.TypeScriptServiceHolder
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
@@ -14,17 +14,17 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.startOffset
 import org.angular2.lang.expr.service.Angular2TypeScriptService
 import org.angular2.lang.html.Angular2HtmlDialect
-import org.angular2.lang.html.tcb.Angular2TemplateTranspiler.DiagnosticKind
-import org.angular2.lang.html.tcb.Angular2TranspiledComponentFileBuilder
+import org.angular2.lang.expr.service.tcb.Angular2TemplateTranspiler.DiagnosticKind
+import org.angular2.lang.expr.service.tcb.Angular2TranspiledDirectiveFileBuilder
 
 abstract class AngularTcbOutOfBandInspectionBase(private val kind: DiagnosticKind) : LocalInspectionTool() {
 
   override fun checkFile(file: PsiFile, manager: InspectionManager, isOnTheFly: Boolean): Array<ProblemDescriptor>? {
     if (file.language !is Angular2HtmlDialect
-        || TypeScriptService.getForElement(file)?.service !is Angular2TypeScriptService)
+        || TypeScriptServiceHolder.getForElement(file)?.service !is Angular2TypeScriptService)
       return null
 
-    val (transpiledFile, topLevelTemplateFile) = Angular2TranspiledComponentFileBuilder.getTranspiledComponentAndTopLevelTemplateFile(file)
+    val (transpiledFile, topLevelTemplateFile) = Angular2TranspiledDirectiveFileBuilder.getTranspiledDirectiveAndTopLevelSourceFile(file)
                                                  ?: return null
 
     val diagnostics = transpiledFile.diagnostics[topLevelTemplateFile]
@@ -45,7 +45,7 @@ abstract class AngularTcbOutOfBandInspectionBase(private val kind: DiagnosticKin
       val commonElement = PsiTreeUtil.findElementOfClassAtRange(file, startOffset, startOffset + it.length, PsiElement::class.java)
                           ?: return@mapNotNull null
       val startOffsetInTheElement = startOffset - commonElement.startOffset
-      ProblemDescriptorImpl(commonElement, commonElement, it.message, null,
+      ProblemDescriptorImpl(commonElement, commonElement, it.message, it.quickFixes,
                             it.highlightType ?: ProblemHighlightType.GENERIC_ERROR_OR_WARNING,
                             false, TextRange(startOffsetInTheElement, startOffsetInTheElement + it.length), isOnTheFly)
     }.toTypedArray()

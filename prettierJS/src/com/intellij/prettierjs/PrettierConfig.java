@@ -1,6 +1,7 @@
-// Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.prettierjs;
 
+import com.google.gson.JsonObject;
 import com.intellij.application.options.CodeStyle;
 import com.intellij.lang.javascript.formatter.JSCodeStyleUtil;
 import com.intellij.openapi.project.Project;
@@ -10,6 +11,7 @@ import com.intellij.psi.codeStyle.CodeStyleSettings;
 import com.intellij.util.LineSeparator;
 import com.intellij.util.ObjectUtils;
 import com.intellij.util.containers.ContainerUtil;
+import com.intellij.webcore.util.JsonUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -32,6 +34,10 @@ public class PrettierConfig {
     return DEFAULT.mergeWith(map);
   }
 
+  public static PrettierConfig createFromJson(@Nullable JsonObject object) {
+    return DEFAULT.mergeWith(object);
+  }
+
   public static final PrettierConfig DEFAULT = new PrettierConfig(
     false, true, 80,
     true, false, 2, TrailingCommaOption.none,
@@ -45,8 +51,7 @@ public class PrettierConfig {
   public final int tabWidth;
   public final TrailingCommaOption trailingComma;
   public final boolean useTabs;
-  @Nullable
-  public final String lineSeparator;
+  public final @Nullable String lineSeparator;
   public final boolean vueIndentScriptAndStyle;
 
   public PrettierConfig(boolean jsxBracketSameLine,
@@ -103,6 +108,24 @@ public class PrettierConfig {
     );
   }
 
+  public PrettierConfig mergeWith(@Nullable JsonObject object) {
+    if (object == null || object.isEmpty()) {
+      return this;
+    }
+    return new PrettierConfig(
+      JsonUtil.getChildAsBoolean(object, JSX_BRACKET_SAME_LINE, jsxBracketSameLine),
+      JsonUtil.getChildAsBoolean(object, BRACKET_SPACING, bracketSpacing),
+      JsonUtil.getChildAsInteger(object, PRINT_WIDTH, printWidth),
+      JsonUtil.getChildAsBoolean(object, SEMI, semi),
+      JsonUtil.getChildAsBoolean(object, SINGLE_QUOTE, singleQuote),
+      JsonUtil.getChildAsInteger(object, TAB_WIDTH, tabWidth),
+      ObjectUtils.coalesce(parseTrailingCommaValue(JsonUtil.getChildAsString(object, TRAILING_COMMA)), trailingComma),
+      JsonUtil.getChildAsBoolean(object, USE_TABS, useTabs),
+      ObjectUtils.coalesce(parseLineSeparatorValue(JsonUtil.getChildAsString(object, END_OF_LINE)), lineSeparator),
+      JsonUtil.getChildAsBoolean(object, VUE_INDENT_SCRIPT_AND_STYLE, vueIndentScriptAndStyle)
+    );
+  }
+
   @Override
   public String toString() {
     return "Config{" +
@@ -119,14 +142,12 @@ public class PrettierConfig {
            '}';
   }
 
-  @Nullable
-  private static String parseLineSeparatorValue(@Nullable String string) {
+  private static @Nullable String parseLineSeparatorValue(@Nullable String string) {
     LineSeparator separator = parseLineSeparator(string);
     return separator != null ? separator.getSeparatorString() : null;
   }
 
-  @Nullable
-  private static LineSeparator parseLineSeparator(@Nullable String string) {
+  private static @Nullable LineSeparator parseLineSeparator(@Nullable String string) {
     if (string == null) {
       return null;
     }
@@ -143,8 +164,7 @@ public class PrettierConfig {
     return value == null ? null : value.intValue();
   }
 
-  @Nullable
-  private static TrailingCommaOption parseTrailingCommaValue(@Nullable String string) {
+  private static @Nullable TrailingCommaOption parseTrailingCommaValue(@Nullable String string) {
     return string == null ? null : StringUtil.parseEnum(string, null, TrailingCommaOption.class);
   }
 

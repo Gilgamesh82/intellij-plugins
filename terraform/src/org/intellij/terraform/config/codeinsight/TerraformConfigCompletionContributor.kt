@@ -2,12 +2,8 @@
 package org.intellij.terraform.config.codeinsight
 
 import com.intellij.codeInsight.completion.*
-import com.intellij.codeInsight.lookup.LookupElement
-import com.intellij.codeInsight.lookup.LookupElementBuilder
+import com.intellij.codeInsight.lookup.*
 import com.intellij.codeInsight.lookup.LookupElementBuilder.create
-import com.intellij.codeInsight.lookup.LookupElementPresentation
-import com.intellij.codeInsight.lookup.LookupElementRenderer
-import com.intellij.codeInsight.lookup.LookupElementWeigher
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.components.service
@@ -25,7 +21,6 @@ import com.intellij.psi.util.parentOfType
 import com.intellij.util.Plow.Companion.toPlow
 import com.intellij.util.ProcessingContext
 import com.intellij.util.Processor
-import org.intellij.terraform.TerraformIcons
 import org.intellij.terraform.config.Constants
 import org.intellij.terraform.config.Constants.HCL_BACKEND_IDENTIFIER
 import org.intellij.terraform.config.Constants.HCL_DATASOURCE_IDENTIFIER
@@ -39,6 +34,7 @@ import org.intellij.terraform.config.codeinsight.TerraformCompletionUtil.createP
 import org.intellij.terraform.config.codeinsight.TerraformCompletionUtil.dumpPsiFileModel
 import org.intellij.terraform.config.codeinsight.TerraformCompletionUtil.getClearTextValue
 import org.intellij.terraform.config.codeinsight.TerraformCompletionUtil.getIncomplete
+import org.intellij.terraform.config.codeinsight.TerraformCompletionUtil.getLookupIcon
 import org.intellij.terraform.config.codeinsight.TerraformCompletionUtil.getOriginalObject
 import org.intellij.terraform.config.documentation.psi.FakeHCLElementPsiFactory
 import org.intellij.terraform.config.model.*
@@ -67,6 +63,10 @@ import org.intellij.terraform.hcl.psi.HCLPsiUtil.getPrevSiblingNonWhiteSpace
 import org.intellij.terraform.hil.HILFileType
 import org.intellij.terraform.hil.codeinsight.ReferenceCompletionHelper.findByFQNRef
 import org.intellij.terraform.hil.psi.ILExpression
+import org.intellij.terraform.opentofu.OpenTofuConstants.TOFU_ENCRYPTION_METHOD_BLOCK
+import org.intellij.terraform.opentofu.OpenTofuConstants.TOFU_KEY_PROVIDER
+import org.intellij.terraform.opentofu.model.encryptionKeyProviders
+import org.intellij.terraform.opentofu.model.encryptionMethods
 
 class TerraformConfigCompletionContributor : HCLCompletionContributor() {
   init {
@@ -107,12 +107,12 @@ class TerraformConfigCompletionContributor : HCLCompletionContributor() {
       .withSuperParent(4, Block), BlockPropertiesCompletionProvider)
     extend(CompletionType.BASIC, psiElement().withElementType(HCLTokenTypes.IDENTIFYING_LITERALS)
       .inFile(TerraformConfigFile)
+      .and(psiElement().insideStarting(Block))
       .withParent(IdentifierOrStringLiteral)
       .withSuperParent(2, Block)
       .withSuperParent(3, Object)
       .withSuperParent(4, Block), BlockPropertiesCompletionProvider)
-
-    // Leftmost identifier of block could be start of new property in case of eol betwen it ant next identifier
+    // Leftmost identifier of block could be start of new property in case of eol between it and the next identifier
     //```
     //resource "X" "Y" {
     //  count<caret>
@@ -309,6 +309,14 @@ class TerraformConfigCompletionContributor : HCLCompletionContributor() {
           typeModel.backends.toPlow()
             .map { buildLookupElement(it, it.type, it.description, position) }
             .processWith(consumer)
+        TOFU_KEY_PROVIDER ->
+          encryptionKeyProviders.values.toPlow()
+            .map { buildLookupElement(it, it.type, it.description, position) }
+            .processWith(consumer)
+        TOFU_ENCRYPTION_METHOD_BLOCK ->
+          encryptionMethods.values.toPlow()
+            .map { buildLookupElement(it, it.type, it.description, position) }
+            .processWith(consumer)
         else -> true
       }
     }
@@ -321,7 +329,7 @@ class TerraformConfigCompletionContributor : HCLCompletionContributor() {
             presentation.setItemText(TerraformCompletionUtil.buildResourceDisplayString(it as BlockType, providerLocalNamesReversed))
             presentation.typeText = TerraformCompletionUtil.buildProviderTypeText(it.provider)
             presentation.isTypeGrayed = true
-            presentation.icon = TerraformIcons.Terraform
+            presentation.icon = getLookupIcon(position)
           }
         })
         .withInsertHandler(BlockSubNameInsertHandler(it as BlockType))
@@ -336,7 +344,7 @@ class TerraformConfigCompletionContributor : HCLCompletionContributor() {
             presentation.tailText = " (${it.namespace})"
             presentation.typeText = it.version
             presentation.isTypeGrayed = true
-            presentation.icon = TerraformIcons.Terraform
+            presentation.icon = getLookupIcon(position)
           }
         })
         .withInsertHandler(BlockSubNameInsertHandler(it))
@@ -345,7 +353,7 @@ class TerraformConfigCompletionContributor : HCLCompletionContributor() {
 
     private fun buildLookupElement(it: BlockType, typeName: String, typeText: String?, position: PsiElement): LookupElementBuilder = create(typeName)
       .withTypeText(typeText, true)
-      .withIcon(TerraformIcons.Terraform)
+      .withIcon(getLookupIcon(position))
       .withInsertHandler(BlockSubNameInsertHandler(it))
       .withPsiElement(position.project.service<FakeHCLElementPsiFactory>().createFakeHCLBlock(it.literal, typeName, position.containingFile.originalFile))
   }

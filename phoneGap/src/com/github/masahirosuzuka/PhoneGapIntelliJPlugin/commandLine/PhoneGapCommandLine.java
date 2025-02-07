@@ -1,4 +1,4 @@
-// Copyright 2000-2021 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.github.masahirosuzuka.PhoneGapIntelliJPlugin.commandLine;
 
 import com.intellij.execution.ExecutionException;
@@ -23,8 +23,6 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static com.intellij.openapi.util.text.StringUtil.contains;
-
 public final class PhoneGapCommandLine {
   private static final Logger LOGGER = Logger.getInstance(PhoneGapCommandLine.class);
 
@@ -42,8 +40,7 @@ public final class PhoneGapCommandLine {
   public static final long PROCESS_TIMEOUT = TimeUnit.SECONDS.toMillis(120);
   public static final long PROCESS_VERSION_TIMEOUT = TimeUnit.MILLISECONDS.toMillis(10);
 
-  @Nullable
-  private final String myWorkDir;
+  private final @Nullable String myWorkDir;
 
   public boolean isPassParentEnv() {
     return myPassParentEnv;
@@ -53,22 +50,18 @@ public final class PhoneGapCommandLine {
     return myEnv;
   }
 
-  @Nullable
-  public String getWorkDir() {
+  public @Nullable String getWorkDir() {
 
     return myWorkDir;
   }
 
-  @NotNull
-  public String getPath() {
+  public @NotNull String getPath() {
     return myPath;
   }
 
-  @NotNull
-  private final String myPath;
+  private final @NotNull String myPath;
 
-  @Nullable
-  private String myVersion;
+  private @Nullable String myVersion;
   private boolean myIsCorrect = true;
 
 
@@ -99,8 +92,7 @@ public final class PhoneGapCommandLine {
     this(path, dir, true, new HashMap<>());
   }
 
-  @NotNull
-  public CapturingProcessHandler platformAdd(@NotNull String platform) throws ExecutionException {
+  public @NotNull CapturingProcessHandler platformAdd(@NotNull String platform) throws ExecutionException {
     platform = platform.trim();
     String[] command = getExecutor().getPlatformAddCommands(platform);
     return createCapturingProcessHandler(command);
@@ -117,8 +109,7 @@ public final class PhoneGapCommandLine {
     return myIsCorrect;
   }
 
-  @NlsSafe
-  public String version() {
+  public @NlsSafe String version() {
     return myVersion;
   }
 
@@ -158,8 +149,7 @@ public final class PhoneGapCommandLine {
     return false;
   }
 
-  @NotNull
-  public List<String> pluginList() {
+  public @NotNull List<String> pluginList() {
     try {
       String out = executeAndReturnResult(getExecutor().getPluginListCommands()).trim();
       return parsePluginList(out);
@@ -171,11 +161,10 @@ public final class PhoneGapCommandLine {
   }
 
 
-  @NotNull
-  public OSProcessHandler runCommand(@NotNull String command,
-                                     @NotNull String platform,
-                                     @Nullable String target,
-                                     @Nullable String extraArgs) throws ExecutionException {
+  public @NotNull OSProcessHandler runCommand(@NotNull String command,
+                                              @NotNull String platform,
+                                              @Nullable String target,
+                                              @Nullable String extraArgs) throws ExecutionException {
     return createProcessHandler(getExecutor().getCommands(command, platform, target, extraArgs));
   }
 
@@ -208,8 +197,7 @@ public final class PhoneGapCommandLine {
   /**
    * @return true - phonegap / false - not phonegap / null - cannot detect
    */
-  @Nullable
-  public static Boolean isPhoneGapExecutableByPath(@Nullable String path) {
+  public static @Nullable Boolean isPhoneGapExecutableByPath(@Nullable String path) {
     if (StringUtil.isEmpty(path)) return false;
 
     File file = new File(path);
@@ -237,8 +225,7 @@ public final class PhoneGapCommandLine {
   }
 
 
-  @NotNull
-  public static ThreeState isIonicPath(@Nullable String path) {
+  public static @NotNull ThreeState isIonicPath(@Nullable String path) {
     if (StringUtil.isEmptyOrSpaces(path)) return ThreeState.NO;
 
     File file = new File(path);
@@ -251,7 +238,7 @@ public final class PhoneGapCommandLine {
   }
 
   static List<String> parsePluginList(String out) {
-    if (StringUtil.isEmpty(out) || contains(out.toLowerCase(Locale.getDefault()), "no plugins")) {
+    if (StringUtil.isEmpty(out) || StringUtil.contains(out.toLowerCase(Locale.getDefault()), "no plugins")) {
       return new ArrayList<>();
     }
 
@@ -265,7 +252,7 @@ public final class PhoneGapCommandLine {
     }
     List<String> plugins = Arrays.stream(out.split("\n"))
       .map(StringUtil::trim)
-      .filter(el -> el.length() > 0 && AsciiUtil.isLetter(el.charAt(0)))
+      .filter(el -> !el.isEmpty() && AsciiUtil.isLetter(el.charAt(0)))
       .collect(Collectors.toList());
 
     String item = ContainerUtil.getFirstItem(plugins);
@@ -395,7 +382,7 @@ public final class PhoneGapCommandLine {
 
     for (String s : paramList.split(" ")) {
       String trim = StringUtil.trim(s);
-      if (trim != null && !trim.isEmpty()) {
+      if (!trim.isEmpty()) {
         list.add(trim);
       }
     }

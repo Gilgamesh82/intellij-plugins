@@ -2,13 +2,14 @@
 package org.angular2.codeInsight.deprecated
 
 import com.intellij.util.containers.ContainerUtil
-import com.intellij.webSymbols.checkListByFile
-import com.intellij.webSymbols.moveToOffsetBySignature
-import com.intellij.webSymbols.renderLookupItems
+import com.intellij.webSymbols.testFramework.checkListByFile
+import com.intellij.webSymbols.testFramework.moveToOffsetBySignature
+import com.intellij.webSymbols.testFramework.renderLookupItems
 import one.util.streamex.StreamEx
 import org.angular2.Angular2CodeInsightFixtureTestCase
 import org.angular2.Angular2TemplateInspectionsProvider
 import org.angular2.Angular2TestModule
+import org.angular2.Angular2TestModule.Companion.configureDependencies
 import org.angular2.Angular2TestUtil
 
 @Deprecated("Use test appropriate for IDE feature being tested - e.g. completion/resolve/highlighting ")
@@ -18,14 +19,14 @@ class Angular2SvgTest : Angular2CodeInsightFixtureTestCase() {
   }
 
   fun testHighlighting() {
-    Angular2TestModule.configureCopy(myFixture, Angular2TestModule.ANGULAR_COMMON_4_0_0, Angular2TestModule.ANGULAR_CORE_4_0_0)
+    myFixture.configureDependencies(Angular2TestModule.ANGULAR_COMMON_4_0_0, Angular2TestModule.ANGULAR_CORE_4_0_0)
     myFixture.enableInspections(Angular2TemplateInspectionsProvider())
     myFixture.configureByFiles("svg-highlighting.component.svg", "svg-highlighting.component.ts")
     myFixture.checkHighlighting()
   }
 
   fun testCompletion() {
-    Angular2TestModule.configureLink(myFixture, Angular2TestModule.ANGULAR_COMMON_4_0_0, Angular2TestModule.ANGULAR_CORE_4_0_0)
+    myFixture.configureDependencies(Angular2TestModule.ANGULAR_COMMON_4_0_0, Angular2TestModule.ANGULAR_CORE_4_0_0)
     myFixture.configureByFiles("svg-completion.component.svg", "svg-completion.component.ts")
     myFixture.moveToOffsetBySignature("<<caret>paths></paths>")
     myFixture.completeBasic()
@@ -33,7 +34,7 @@ class Angular2SvgTest : Angular2CodeInsightFixtureTestCase() {
   }
 
   fun testExpressionsCompletion() {
-    Angular2TestModule.configureCopy(myFixture, Angular2TestModule.ANGULAR_COMMON_4_0_0, Angular2TestModule.ANGULAR_CORE_4_0_0)
+    myFixture.configureDependencies(Angular2TestModule.ANGULAR_COMMON_4_0_0, Angular2TestModule.ANGULAR_CORE_4_0_0)
     myFixture.copyDirectoryToProject(".", ".")
     myFixture.configureByFiles("svg-completion.component.svg", "svg-completion.component.ts")
     myFixture.moveToOffsetBySignature("{{<caret>item.height}}")
@@ -48,7 +49,7 @@ class Angular2SvgTest : Angular2CodeInsightFixtureTestCase() {
   }
 
   fun testExpressionsCompletion2() {
-    Angular2TestModule.configureCopy(myFixture, Angular2TestModule.ANGULAR_COMMON_4_0_0, Angular2TestModule.ANGULAR_CORE_4_0_0)
+    myFixture.configureDependencies(Angular2TestModule.ANGULAR_COMMON_4_0_0, Angular2TestModule.ANGULAR_CORE_4_0_0)
     myFixture.copyDirectoryToProject(".", ".")
     myFixture.configureByFiles("svg-completion.component.svg", "svg-completion.component.ts")
     myFixture.moveToOffsetBySignature("{{item.<caret>height}}")

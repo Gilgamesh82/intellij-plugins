@@ -1,4 +1,4 @@
-// Copyright 2000-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.prettierjs.codeStyle;
 
 import com.intellij.lang.Language;
@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import static com.intellij.prettierjs.codeStyle.PrettierCodeStyleInstaller.applyCommonPrettierSettings;
 import static com.intellij.prettierjs.codeStyle.PrettierCodeStyleInstaller.commonPrettierSettingsApplied;
 
-public class JSPrettierCodeStyleInstaller implements PrettierCodeStyleInstaller {
+final class JSPrettierCodeStyleInstaller implements PrettierCodeStyleInstaller {
   @Override
   public void install(@NotNull Project project, @NotNull PrettierConfig config, @NotNull CodeStyleSettings settings) {
     installJSDialectSettings(config, settings, JavascriptLanguage.INSTANCE, JSCodeStyleSettings.class);
@@ -64,8 +64,7 @@ public class JSPrettierCodeStyleInstaller implements PrettierCodeStyleInstaller 
     customSettings.SPACE_BEFORE_FUNCTION_LEFT_PARENTH = false;
   }
 
-  @NotNull
-  private static JSCodeStyleSettings.TrailingCommaOption convertTrailingCommaOption(@NotNull PrettierConfig.TrailingCommaOption option) {
+  private static @NotNull JSCodeStyleSettings.TrailingCommaOption convertTrailingCommaOption(@NotNull PrettierConfig.TrailingCommaOption option) {
     return switch (option) {
       case none -> JSCodeStyleSettings.TrailingCommaOption.Remove;
       case all, es5 -> JSCodeStyleSettings.TrailingCommaOption.WhenMultiline;

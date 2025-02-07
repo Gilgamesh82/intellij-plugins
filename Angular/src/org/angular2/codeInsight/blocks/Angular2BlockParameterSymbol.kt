@@ -14,11 +14,14 @@ class Angular2BlockParameterSymbol : WebTypesSymbolBase() {
   val isPrimaryExpression: Boolean
     get() = name == PRIMARY_EXPRESSION
 
+  val hasContent: Boolean
+    get() = properties["no-content"] as? Boolean != true
+
   val triggers: List<WebSymbol>
     get() = queryExecutor.runListSymbolsQuery(NG_DEFER_ON_TRIGGERS, true, additionalScope = listOf(this))
 
   companion object {
-    const val PRIMARY_EXPRESSION = "\$primary-expression"
+    const val PRIMARY_EXPRESSION: String = "\$primary-expression"
   }
 
   class Factory : WebTypesSymbolFactory {

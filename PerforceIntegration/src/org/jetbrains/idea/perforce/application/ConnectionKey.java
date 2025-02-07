@@ -19,12 +19,13 @@ public class ConnectionKey {
   private final String client;
   private final String user;
 
-  public ConnectionKey(@NotNull final String server, @NotNull final String client, @NotNull final String user) {
+  public ConnectionKey(final @NotNull String server, final @NotNull String client, final @NotNull String user) {
     this.server = server;
     this.client = client;
     this.user = user;
   }
 
+  @Override
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
@@ -38,6 +39,7 @@ public class ConnectionKey {
     return true;
   }
 
+  @Override
   public int hashCode() {
     int result;
     result = server.hashCode();

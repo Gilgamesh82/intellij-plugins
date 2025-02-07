@@ -1,4 +1,4 @@
-// Copyright 2000-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.javascript.karma.execution;
 
 import com.intellij.execution.ExecutionException;
@@ -46,7 +46,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.concurrency.Promise;
 import org.jetbrains.io.LocalFileFinder;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -128,7 +128,9 @@ public class KarmaExecutionSession {
     KarmaServerTerminatedListener terminationCallback = new KarmaServerTerminatedListener() {
       @Override
       public void onTerminated(int exitCode) {
-        ScriptRunnerUtil.terminateProcessHandler(processHandler, 2000, null);
+        ProcessIOExecutorService.INSTANCE.execute(() -> {
+          ScriptRunnerUtil.terminateProcessHandler(processHandler, 2000, null);
+        });
       }
     };
     server.onTerminated(terminationCallback);
@@ -140,8 +142,7 @@ public class KarmaExecutionSession {
     });
   }
 
-  @NotNull
-  private OSProcessHandler createOSProcessHandler(@NotNull KarmaServer server) throws ExecutionException {
+  private @NotNull OSProcessHandler createOSProcessHandler(@NotNull KarmaServer server) throws ExecutionException {
     NodeJsInterpreter interpreter = myRunSettings.getInterpreterRef().resolveNotNull(myProject);
     NodeTargetRun targetRun = createTargetRun(interpreter, server);
     OSProcessHandler processHandler = targetRun.startProcessEx().getProcessHandler();
@@ -150,8 +151,7 @@ public class KarmaExecutionSession {
     return processHandler;
   }
 
-  @NotNull
-  private NodeTargetRun createTargetRun(@NotNull NodeJsInterpreter interpreter, @NotNull KarmaServer server) throws ExecutionException {
+  private @NotNull NodeTargetRun createTargetRun(@NotNull NodeJsInterpreter interpreter, @NotNull KarmaServer server) throws ExecutionException {
     NodeTargetRun targetRun = new NodeTargetRun(interpreter, myProject, null, NodeTargetRunOptions.of(shouldUsePtyForTestRunners(),
                                                                                                       myRunConfiguration));
     TargetedCommandLineBuilder commandLine = targetRun.getCommandLineBuilder();
@@ -160,9 +160,9 @@ public class KarmaExecutionSession {
     //NodeCommandLineUtil.addNodeOptionsForDebugging(commandLine, Collections.emptyList(), 5858, false, interpreter, true);
 
     // upload karma-intellij/ folder to the remote if needed
-    targetRun.path(KarmaJsSourcesLocator.getInstance().getKarmaIntellijPackageDir().getAbsolutePath());
-    File clientAppFile = KarmaJsSourcesLocator.getInstance().getClientAppFile();
-    commandLine.addParameter(targetRun.path(clientAppFile.getAbsolutePath()));
+    targetRun.path(KarmaJsSourcesLocator.getInstance().getKarmaIntellijPackageDir());
+    Path clientAppFile = KarmaJsSourcesLocator.getInstance().getClientAppFile();
+    commandLine.addParameter(targetRun.path(clientAppFile));
     if (NodeJsRemoteInterpreter.isDocker(interpreter) || NodeJsRemoteInterpreter.isDockerCompose(interpreter)) {
       // Workaround for Docker/Docker Compose: assume remove karma server port is forwarded to IDE host with the same port.
       // Need to run karma-runner and karma server in the same Docker container, but it's not possible now.
@@ -194,8 +194,7 @@ public class KarmaExecutionSession {
     return targetRun;
   }
 
-  @Nullable
-  private String getTestNamesPattern() throws ExecutionException {
+  private @Nullable String getTestNamesPattern() throws ExecutionException {
     if (myFailedTestNames != null) {
       return JSTestRunnerUtil.getTestsPattern(myFailedTestNames, false);
     }

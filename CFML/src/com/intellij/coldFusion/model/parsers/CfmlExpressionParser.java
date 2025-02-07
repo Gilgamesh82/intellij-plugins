@@ -1,23 +1,8 @@
-/*
- * Copyright 2000-2013 JetBrains s.r.o.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.coldFusion.model.parsers;
 
 import com.intellij.coldFusion.CfmlBundle;
 import com.intellij.coldFusion.model.lexer.CfmlTokenTypes;
-import com.intellij.coldFusion.model.lexer.CfscriptTokenTypes;
 import com.intellij.lang.PsiBuilder;
 import com.intellij.psi.tree.IElementType;
 import org.jetbrains.annotations.Nullable;
@@ -28,7 +13,7 @@ import static com.intellij.coldFusion.model.lexer.CfscriptTokenTypes.*;
  * Created by Lera Nikolaenko
  */
 public class CfmlExpressionParser {
-  private PsiBuilder myBuilder = null;
+  private final PsiBuilder myBuilder;
 
   public CfmlExpressionParser(final PsiBuilder builder) {
     myBuilder = builder;
@@ -36,39 +21,6 @@ public class CfmlExpressionParser {
 
   /*
      EXPRESSION := VALUE | VALUE BOP VALUE
-  */
-  /*
-  public boolean parseExpression() {
-      boolean ifComplex = false;
-
-      if (closeExpressionToken()) return false;
-      PsiBuilder.Marker expressionMarker = myBuilder.mark();
-      parseOperand();
-      while (!closeExpressionToken()) {
-          int offset = myBuilder.getCurrentOffset();
-          ifComplex = true;
-          if (BINARY_OPERATIONS.contains(getTokenType())) {
-              advance();
-              if (closeExpressionToken()) {
-                  myBuilder.error(CfmlBundle.message("cfml.parsing.right.operand.missed"));
-                  break;
-              }
-          } else {
-              myBuilder.error(CfmlBundle.message("cfml.parsing.binary.op.expected"));
-          }
-          parseOperand();
-          if (myBuilder.getCurrentOffset() == offset) {
-              myBuilder.error(CfmlBundle.message("cfml.parsing.unexpected.token"));
-              advance();
-          }
-      }
-      if (ifComplex) {
-          expressionMarker.done(CfmlCompositeElementTypes.NONE);
-      } else {
-          expressionMarker.drop();
-      }
-      return true;
-  }
   */
   public boolean parseExpression() {
     if (myBuilder.getTokenType() == FUNCTION_KEYWORD) {
@@ -408,7 +360,7 @@ public class CfmlExpressionParser {
 
   private boolean parseID(boolean ifSharpsInIDs) {
     if (!ifSharpsInIDs) {
-      if (getTokenType() == IDENTIFIER || CfscriptTokenTypes.KEYWORDS.contains(getTokenType())) {
+      if (getTokenType() == IDENTIFIER || KEYWORDS.contains(getTokenType())) {
         advance();
         return true;
       }
@@ -520,9 +472,6 @@ public class CfmlExpressionParser {
 
     if (getTokenType() == CfmlTokenTypes.DOUBLE_QUOTE || getTokenType() == CfmlTokenTypes.SINGLE_QUOTE) {
       advance();
-      /*if (myBuilder.getTokenType() == STRING_TEXT) {
-        advance();
-      }*/
       PsiBuilder.Marker lValueMarker = myBuilder.mark();
       isReference = (parseReference(true) || parseStringReference(true));
       if (!isReference) {
@@ -638,7 +587,7 @@ public class CfmlExpressionParser {
     if (getTokenType() == CfmlTokenTypes.DOUBLE_QUOTE) {
       parseString();
     }
-    else if (getTokenType() == CfscriptTokenTypes.IDENTIFIER) {
+    else if (getTokenType() == IDENTIFIER) {
       parseComponentReference();
     }
     else {
@@ -841,13 +790,11 @@ public class CfmlExpressionParser {
 
   // util methods
 
-  @Nullable
-  private String getTokenText() {
+  private @Nullable String getTokenText() {
     return myBuilder.getTokenText();
   }
 
-  @Nullable
-  private IElementType getTokenType() {
+  private @Nullable IElementType getTokenType() {
     return myBuilder.getTokenType();
   }
 

@@ -1,4 +1,4 @@
-// Copyright 2000-2021 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.jetbrains.lang.dart.sdk;
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
@@ -52,10 +52,6 @@ public final class DartConfigurable implements SearchableConfigurable, NoScroll 
 
   private static final String DART_SETTINGS_PAGE_ID = "dart.settings";
 
-  private static final boolean ML_CODE_COMPLETION_DEFAULT_VALUE = false;
-  private static final String ML_CODE_COMPLETION_PROPERTY_NAME = "dart.analysis.ml.code.completion";
-  public static final String ML_CODE_COMPLETION_MIN_DART_SDK_VERSION = "2.5";
-
   private JPanel myMainPanel;
   private JBCheckBox myEnableDartSupportCheckBox;
 
@@ -67,10 +63,6 @@ public final class DartConfigurable implements SearchableConfigurable, NoScroll 
   private JBCheckBox myCheckSdkUpdateCheckBoxFake;
   private ComboBox<DartSdkUpdateOption> mySdkUpdateChannelCombo;
   private JButton myCheckSdkUpdateButton;
-
-  //private JBCheckBox myMLCodeCompletionCheckBox;
-  // disabled and unchecked, shown in UI instead of myMLCodeCompletionCheckBox if selected Dart SDK is older than 2.5
-  //private JBCheckBox myMLCodeCompletionCheckBoxFake;
 
   private PortField myPortField;
 
@@ -113,7 +105,7 @@ public final class DartConfigurable implements SearchableConfigurable, NoScroll 
     final JTextComponent sdkEditor = (JTextComponent)mySdkPathComboWithBrowse.getComboBox().getEditor().getEditorComponent();
     sdkEditor.getDocument().addDocumentListener(new DocumentAdapter() {
       @Override
-      protected void textChanged(@NotNull final DocumentEvent e) {
+      protected void textChanged(final @NotNull DocumentEvent e) {
         final String sdkHomePath = getTextFromCombo(mySdkPathComboWithBrowse);
         if (!sdkHomePath.isEmpty()) {
           final String version = DartSdkUtil.getSdkVersion(sdkHomePath);
@@ -205,26 +197,22 @@ public final class DartConfigurable implements SearchableConfigurable, NoScroll 
   }
 
   @Override
-  @NotNull
-  public String getId() {
+  public @NotNull String getId() {
     return "dart.settings";
   }
 
   @Override
-  @Nls
-  public String getDisplayName() {
+  public @Nls String getDisplayName() {
     return DartBundle.message("dart.title");
   }
 
   @Override
-  @Nullable
-  public String getHelpTopic() {
+  public @Nullable String getHelpTopic() {
     return "settings.dart.settings";
   }
 
   @Override
-  @Nullable
-  public JComponent createComponent() {
+  public @Nullable JComponent createComponent() {
     return myMainPanel;
   }
 
@@ -250,10 +238,6 @@ public final class DartConfigurable implements SearchableConfigurable, NoScroll 
       if (sdkUpdateOption != DartSdkUpdateOption.getDartSdkUpdateOption()) return true;
     }
 
-    //if (isMLCompletionApplicable()) {
-    //  if (myMLCodeCompletionCheckBox.isSelected() != isMLCodeCompletionEnabled(myProject)) return true;
-    //}
-
     if (myPortField.getNumber() != getWebdevPort(myProject)) return true;
 
     if (myShowModulesPanel) {
@@ -271,8 +255,7 @@ public final class DartConfigurable implements SearchableConfigurable, NoScroll 
     return false;
   }
 
-  @NotNull
-  private static String getTextFromCombo(@NotNull final ComboboxWithBrowseButton combo) {
+  private static @NotNull String getTextFromCombo(final @NotNull ComboboxWithBrowseButton combo) {
     return FileUtilRt.toSystemIndependentName(combo.getComboBox().getEditor().getItem().toString().trim());
   }
 
@@ -300,9 +283,6 @@ public final class DartConfigurable implements SearchableConfigurable, NoScroll 
     myCheckSdkUpdateCheckBox.setSelected(sdkUpdateOption != DartSdkUpdateOption.DoNotCheck);
     mySdkUpdateChannelCombo.setSelectedItem(sdkUpdateOption);
 
-    // No isMLCompletionApplicable() check here is intentional.
-    //myMLCodeCompletionCheckBox.setSelected(isMLCodeCompletionEnabled(myProject));
-
     myPortField.setNumber(getWebdevPort(myProject));
 
     if (myShowModulesPanel) {
@@ -319,7 +299,7 @@ public final class DartConfigurable implements SearchableConfigurable, NoScroll 
     updateErrorLabel();
   }
 
-  private static void ensureComboModelContainsCurrentItem(@NotNull final JComboBox comboBox) {
+  private static void ensureComboModelContainsCurrentItem(final @NotNull JComboBox comboBox) {
     final Object currentItem = comboBox.getEditor().getItem();
 
     boolean contains = false;
@@ -486,7 +466,7 @@ public final class DartConfigurable implements SearchableConfigurable, NoScroll 
     });
   }
 
-  public static void openDartSettings(@NotNull final Project project) {
+  public static void openDartSettings(final @NotNull Project project) {
     ShowSettingsUtilImpl.showSettingsDialog(project, DART_SETTINGS_PAGE_ID, "");
   }
 
@@ -496,13 +476,5 @@ public final class DartConfigurable implements SearchableConfigurable, NoScroll 
 
   private static void setWebdevPort(@NotNull Project project, int port) {
     PropertiesComponent.getInstance(project).setValue(WEBDEV_PORT_PROPERTY_NAME, port, WEBDEV_PORT_DEFAULT);
-  }
-
-  public static boolean isMLCodeCompletionEnabled(@NotNull Project project) {
-    return PropertiesComponent.getInstance(project).getBoolean(ML_CODE_COMPLETION_PROPERTY_NAME, ML_CODE_COMPLETION_DEFAULT_VALUE);
-  }
-
-  private static void setMLCodeCompletionEnabled(@NotNull Project project, boolean enabled) {
-    PropertiesComponent.getInstance(project).setValue(ML_CODE_COMPLETION_PROPERTY_NAME, enabled, ML_CODE_COMPLETION_DEFAULT_VALUE);
   }
 }

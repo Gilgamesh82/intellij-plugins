@@ -1,4 +1,4 @@
-// Copyright 2000-2021 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.jetbrains.appcode.reveal;
 
 import com.intellij.execution.ExecutionException;
@@ -26,14 +26,14 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import java.io.File;
 
-public class RefreshRevealAction extends DumbAwareAction {
+public final class RefreshRevealAction extends DumbAwareAction {
   public static final Icon ICON = AppcodeRevealIcons.RunWithReveal;
 
-  @NotNull private final AppCodeRunConfiguration myConfiguration;
-  @NotNull private final ExecutionEnvironment myEnvironment;
-  @NotNull private final ProcessHandler myProcessHandler;
-  @NotNull private final BuildDestination myDestination;
-  @NotNull private final String myBundleID;
+  private final @NotNull AppCodeRunConfiguration myConfiguration;
+  private final @NotNull ExecutionEnvironment myEnvironment;
+  private final @NotNull ProcessHandler myProcessHandler;
+  private final @NotNull BuildDestination myDestination;
+  private final @NotNull String myBundleID;
 
   private boolean myDisabled = false;
 
@@ -133,8 +133,7 @@ public class RefreshRevealAction extends DumbAwareAction {
     }
   }
 
-  @Nullable
-  private static String getDeviceName(@NotNull BuildDestination destination) throws ExecutionException {
+  private static @Nullable String getDeviceName(@NotNull BuildDestination destination) throws ExecutionException {
     if (destination instanceof MacOSBuildDestination) {
       // Xcode 8's simulators use the host computer's name
       return ExecUtil.execAndReadLine(new GeneralCommandLine("scutil", "--get", "ComputerName"));

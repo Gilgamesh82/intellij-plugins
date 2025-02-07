@@ -85,8 +85,7 @@ public class SelectedBundle {
     return myBundleType == BundleType.Module;
   }
 
-  @NotNull
-  public String getName() {
+  public @NotNull String getName() {
     return myDisplayName;
   }
 
@@ -94,8 +93,7 @@ public class SelectedBundle {
     myDisplayName = displayName;
   }
 
-  @Nullable
-  public String getBundlePath() {
+  public @Nullable String getBundlePath() {
     return myBundlePath;
   }
 
@@ -133,6 +131,7 @@ public class SelectedBundle {
    * Two selected bundles are equal when they point to the same URL. When the bundles are modules, they do not necessarily
    * have to point to the same URL (as the URL might be null on modules), so in this case the display name decides.
    */
+  @Override
   public boolean equals(Object o) {
     if (o == null) {
       return false;

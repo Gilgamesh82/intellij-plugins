@@ -38,7 +38,9 @@ object Constants {
   internal const val REGISTRY_DOMAIN: String = "registry.terraform.io"
   internal const val LATEST_VERSION: String = "latest"
 
-  internal const val TF_FMT: @NlsSafe String = "Terraform fmt"
+  internal const val PROVIDER_VERSION: String = "version"
+
+  internal const val TF_FMT: @NlsSafe String = "Terraform/OpenTofu format"
 
   internal val OFFICIAL_PROVIDERS_NAMESPACE: Set<String> = setOf("hashicorp", "builtin")
 }

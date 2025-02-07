@@ -24,7 +24,6 @@
  */
 package org.osmorc.settings;
 
-import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
@@ -70,10 +69,9 @@ public class CreateFrameworkInstanceDialog extends DialogWrapper {
     setTitle(OsmorcBundle.message("framework.edit.title", myIntegrator.getDisplayName()));
     setModal(true);
 
-    FileChooserDescriptor descriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor();
-    String title = OsmorcBundle.message("framework.path.chooser.title");
-    String description = OsmorcBundle.message("framework.path.chooser.description", myIntegrator.getDisplayName());
-    myBaseFolderChooser.addBrowseFolderListener(title, description, null, descriptor);
+    myBaseFolderChooser.addBrowseFolderListener(null, FileChooserDescriptorFactory.createSingleFolderDescriptor()
+      .withTitle(OsmorcBundle.message("framework.path.chooser.title"))
+      .withDescription(OsmorcBundle.message("framework.path.chooser.description", myIntegrator.getDisplayName())));
     myBaseFolderChooser.getTextField().setEditable(false);
     myBaseFolderChooser.getTextField().getDocument().addDocumentListener(new DocumentAdapter() {
       @Override
@@ -138,9 +136,8 @@ public class CreateFrameworkInstanceDialog extends DialogWrapper {
     return myBaseFolderChooser.getButton();
   }
 
-  @Nullable
   @Override
-  protected JComponent createCenterPanel() {
+  protected @Nullable JComponent createCenterPanel() {
     return myMainPanel;
   }
 
@@ -149,8 +146,7 @@ public class CreateFrameworkInstanceDialog extends DialogWrapper {
     return "reference.settings.project.osgi.new.framework.instance";
   }
 
-  @NotNull
-  public FrameworkInstanceDefinition createDefinition() {
+  public @NotNull FrameworkInstanceDefinition createDefinition() {
     FrameworkInstanceDefinition framework = new FrameworkInstanceDefinition();
     framework.setName(myNameField.getText().trim());
     framework.setFrameworkIntegratorName(myIntegrator.getDisplayName());

@@ -163,7 +163,7 @@ public class Angular2TemplateReferencesProvider extends PsiReferenceProvider {
     }
 
     public void bindToElementAfterMove(@NotNull PsiFileSystemItem targetFile, @NotNull Collection<PsiFileSystemItem> contexts) {
-      if (contexts.size() > 0) {
+      if (!contexts.isEmpty()) {
         Collection<VirtualFile> filteredContexts = ContainerUtil.map(contexts, el -> el.getVirtualFile());
         VirtualFile dstVFile = targetFile.getVirtualFile();
         String path = JSFileReferencesUtil.getShortestPathInContexts(dstVFile, filteredContexts, true);
@@ -178,7 +178,7 @@ public class Angular2TemplateReferencesProvider extends PsiReferenceProvider {
 
   public static final class Angular2TemplateReferenceData {
     private final VirtualFile targetFile;
-    @Nullable private final Collection<VirtualFile> contexts;
+    private final @Nullable Collection<VirtualFile> contexts;
 
     private Angular2TemplateReferenceData(@NotNull PsiFileSystemItem targetFile,
                                           @Nullable Collection<PsiFileSystemItem> contexts) {

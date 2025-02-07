@@ -5,9 +5,10 @@ import com.intellij.lexer.FlexLexer;
 
 import org.angular2.codeInsight.blocks.Angular2HtmlBlockUtilsKt;
 
-import static org.angular2.lang.expr.lexer.Angular2TokenTypes.*;
+import static com.intellij.lang.javascript.JSTokenTypes.*;
 import static com.intellij.psi.TokenType.BAD_CHARACTER;
 import static com.intellij.psi.TokenType.WHITE_SPACE;
+import static org.angular2.lang.expr.lexer.Angular2TokenTypes.*;
 
 %%
 
@@ -62,7 +63,7 @@ IDENT=[_$a-zA-Z][$0-9_a-zA-Z]*
 
 <YYINITIAL> {
   {WHITE_SPACE}               { return WHITE_SPACE; }
-  "prefetch"                  { if (shouldStartWithParameter()) return BLOCK_PARAMETER_NAME; else { yybegin(YYEXPRESSION); yypushback(yylength());} }
+  "prefetch"|"hydrate"        { if (shouldStartWithParameter()) return BLOCK_PARAMETER_NAME; else { yybegin(YYEXPRESSION); yypushback(yylength());} }
   [a-zA-Z_]+                  { yybegin(YYEXPRESSION); if (shouldStartWithParameter()) return BLOCK_PARAMETER_NAME; else yypushback(yylength()); }
   [^]                         { yypushback(1); yybegin(YYEXPRESSION); }
 }
@@ -86,6 +87,7 @@ IDENT=[_$a-zA-Z][$0-9_a-zA-Z]*
   "if"                        { return IF_KEYWORD; }
   "else"                      { return ELSE_KEYWORD; }
   "this"                      { return THIS_KEYWORD; }
+  "typeof"                    { return TYPEOF_KEYWORD; }
 
   "as"/(\.)                   { return IDENTIFIER; }
   {IDENT}                     { return IDENTIFIER; }

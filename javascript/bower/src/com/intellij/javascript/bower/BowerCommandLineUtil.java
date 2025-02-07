@@ -17,6 +17,8 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
 import static com.intellij.openapi.util.NullableLazyValue.lazyNullable;
@@ -36,24 +38,21 @@ public final class BowerCommandLineUtil {
   private BowerCommandLineUtil() {
   }
 
-  @NotNull
-  public static ProcessOutput runBowerCommand(@Nullable ProgressIndicator indicator,
-                                              @NotNull BowerSettings settings,
-                                              String... commands) throws ExecutionException {
+  public static @NotNull ProcessOutput runBowerCommand(@Nullable ProgressIndicator indicator,
+                                                       @NotNull BowerSettings settings,
+                                                       String... commands) throws ExecutionException {
     BowerCommandRun bowerCommandRun = startBowerCommand(settings, commands);
     return bowerCommandRun.captureOutput(indicator, TimeUnit.MINUTES.toMillis(10));
   }
 
-  @NotNull
-  public static BowerCommandRun startBowerCommand(@NotNull BowerSettings settings, String... commands) throws ExecutionException {
+  public static @NotNull BowerCommandRun startBowerCommand(@NotNull BowerSettings settings, String... commands) throws ExecutionException {
     GeneralCommandLine commandLine = createCommandLine(settings);
     commandLine.addParameters(commands);
     LOG.info("Running bower command: " + commandLine.getCommandLineString());
     return new BowerCommandRun(new KillableColoredProcessHandler(commandLine));
   }
 
-  @NotNull
-  public static GeneralCommandLine createCommandLine(@NotNull BowerSettings settings) throws ExecutionException {
+  public static @NotNull GeneralCommandLine createCommandLine(@NotNull BowerSettings settings) throws ExecutionException {
     NodeJsInterpreter interpreter = settings.getInterpreter();
     NodeJsLocalInterpreter localInterpreter = NodeJsLocalInterpreter.castAndValidate(interpreter);
     GeneralCommandLine commandLine = new GeneralCommandLine();
@@ -66,28 +65,25 @@ public final class BowerCommandLineUtil {
     else {
       LOG.info("Working directory not specified");
     }
-    File mainBowerJsFile = getMainBowerJsFile(settings.getBowerPackage());
+    Path mainBowerJsFile = getMainBowerJsFile(settings.getBowerPackage());
     commandLine.setExePath(localInterpreter.getInterpreterSystemDependentPath());
-    commandLine.addParameter(mainBowerJsFile.getAbsolutePath());
+    commandLine.addParameter(mainBowerJsFile.toString());
     return commandLine;
   }
 
-  @NotNull
-  private static File getMainBowerJsFile(@NotNull NodePackage bowerPackage) throws ExecutionException {
-    String errorMessage = bowerPackage.getErrorMessage(BowerSettingsManager.BOWER_PACKAGE_NAME);
+  private static @NotNull Path getMainBowerJsFile(@NotNull NodePackage bowerPackage) throws ExecutionException {
+    String errorMessage = bowerPackage.validateAndGetErrorMessage(BowerSettingsManager.BOWER_PACKAGE_NAME, null, null);
     if (errorMessage != null) {
       throw new ExecutionException(errorMessage);
     }
-    String path = "bin" + File.separator + "bower";
-    File file = new File(bowerPackage.getSystemDependentPath(), path);
-    if (!file.isFile()) {
-      throw new ExecutionException(BowerBundle.message("bower.dialog.message.specify.package", path));
+    Path file = bowerPackage.findBinFilePath("bower", "bin/bower");
+    if (file == null || !Files.isRegularFile(file)) {
+      throw new ExecutionException(BowerBundle.message("bower.dialog.message.specify.package", "bin/bower"));
     }
     return file;
   }
 
-  @Nullable
-  private static File getWorkingDir(@NotNull BowerSettings settings) {
+  private static @Nullable File getWorkingDir(@NotNull BowerSettings settings) {
     File bowerConfigFile = new File(settings.getBowerJsonPath());
     if (bowerConfigFile.isFile()) {
       return bowerConfigFile.getParentFile();

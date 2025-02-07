@@ -1,0 +1,112 @@
+### auto-generated section `build intellij.meteor` start
+load("@rules_jvm//:jvm.bzl", "jvm_library", "jvm_resources", "jvm_test")
+
+jvm_resources(
+  name = "meteor_resources",
+  files = glob(["compatibilityResources/**/*"]),
+  strip_prefix = "compatibilityResources"
+)
+
+jvm_resources(
+  name = "meteor_resources_1",
+  files = glob(["resources/**/*"]),
+  strip_prefix = "resources"
+)
+
+jvm_library(
+  name = "meteor",
+  module_name = "intellij.meteor",
+  visibility = ["//visibility:public"],
+  srcs = glob(["gen/**/*.kt", "gen/**/*.java", "src/**/*.kt", "src/**/*.java"], allow_empty = True),
+  deps = [
+    "@lib//:gson",
+    "//plugins/JavaScriptLanguage/javascript-frontback-impl",
+    "@community//platform/platform-api:ide",
+    "@community//platform/lang-api:lang",
+    "@community//platform/ide-core-impl",
+    "@community//platform/platform-impl:ide-impl",
+    "@community//platform/lang-impl",
+    "@community//xml/xml-parser:parser",
+    "//plugins/JavaScriptLanguage/javascript-parser",
+    "@community//platform/core-impl",
+    "@community//platform/xdebugger-api:debugger",
+    "//plugins/JavaScriptDebugger:javascript-debugger",
+    "//plugins/JavaScriptDebugger/wip/backend:javascript-wip-backend",
+    "//plugins/JavaScriptDebugger/sdk/backend:javascript-debugger-backend",
+    "//plugins/JavaScriptLanguage:javascript-impl",
+    "@community//xml/impl",
+    "//contrib/handlebars",
+    "//plugins/JavaScriptLanguage/javascript-psi-impl",
+    "//webcore:webide",
+    "//webcore/impl:webide-impl",
+    "//plugins/LiveEdit:js-liveEdit",
+    "//plugins/JavaScriptDebugger/ChromeConnector:javascript-chrome-connector",
+    "//plugins/JavaScriptLanguage:javascript",
+    "//plugins/fileWatcher",
+    "@community//platform/script-debugger/debugger-ui:scriptDebugger-ui",
+    "@community//platform/core-ui",
+    "@community//platform/platform-util-io:ide-util-io",
+    "@community//platform/util/jdom",
+    "@community//platform/script-debugger/backend:scriptDebugger-backend",
+  ],
+  runtime_deps = [
+    ":meteor_resources",
+    ":meteor_resources_1",
+  ]
+)
+
+jvm_library(
+  name = "meteor_test_lib",
+  visibility = ["//visibility:public"],
+  srcs = glob(["testSrc/**/*.kt", "testSrc/**/*.java"], allow_empty = True),
+  associates = [":meteor"],
+  deps = [
+    "@lib//:gson",
+    "//plugins/JavaScriptLanguage/javascript-frontback-impl",
+    "@community//platform/platform-api:ide",
+    "@community//platform/lang-api:lang",
+    "@community//platform/ide-core-impl",
+    "@community//platform/platform-impl:ide-impl",
+    "@community//platform/platform-impl:ide-impl_test_lib",
+    "@community//platform/lang-impl",
+    "@community//xml/xml-parser:parser",
+    "//plugins/JavaScriptLanguage/javascript-parser",
+    "@community//platform/core-impl",
+    "@community//platform/xdebugger-api:debugger",
+    "//plugins/JavaScriptDebugger:javascript-debugger",
+    "//plugins/JavaScriptDebugger/wip/backend:javascript-wip-backend",
+    "//plugins/JavaScriptDebugger/sdk/backend:javascript-debugger-backend",
+    "//plugins/JavaScriptLanguage:javascript-impl",
+    "@community//xml/impl",
+    "@community//platform/testFramework",
+    "@community//platform/testFramework:testFramework_test_lib",
+    "//contrib/handlebars",
+    "//contrib/handlebars:handlebars_test_lib",
+    "//plugins/JavaScriptLanguage/javascript-psi-impl",
+    "//webcore:webide",
+    "//webcore/impl:webide-impl",
+    "//plugins/LiveEdit:js-liveEdit",
+    "//plugins/LiveEdit:js-liveEdit_test_lib",
+    "//plugins/JavaScriptDebugger/ChromeConnector:javascript-chrome-connector",
+    "//plugins/JavaScriptLanguage:javascript",
+    "//plugins/JavaScriptLanguage:javascript-tests_test_lib",
+    "//plugins/JavaScriptLanguage:javascript-testFramework",
+    "//plugins/fileWatcher",
+    "//plugins/fileWatcher:fileWatcher_test_lib",
+    "@community//platform/script-debugger/debugger-ui:scriptDebugger-ui",
+    "@community//platform/core-ui",
+    "@community//platform/platform-util-io:ide-util-io",
+    "@community//platform/util/jdom",
+    "@community//platform/script-debugger/backend:scriptDebugger-backend",
+  ],
+  runtime_deps = [
+    ":meteor_resources",
+    ":meteor_resources_1",
+  ]
+)
+
+jvm_test(
+  name = "meteor_test",
+  runtime_deps = [":meteor_test_lib"]
+)
+### auto-generated section `build intellij.meteor` end

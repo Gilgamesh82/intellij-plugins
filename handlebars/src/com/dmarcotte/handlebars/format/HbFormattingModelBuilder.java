@@ -1,4 +1,4 @@
-// Copyright 2000-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.dmarcotte.handlebars.format;
 
 import com.dmarcotte.handlebars.config.HbConfig;
@@ -13,6 +13,7 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.codeStyle.CodeStyleSettings;
 import com.intellij.psi.formatter.DocumentBasedFormattingModel;
 import com.intellij.psi.formatter.FormattingDocumentModelImpl;
+import com.intellij.psi.formatter.WrappingUtil;
 import com.intellij.psi.formatter.common.AbstractBlock;
 import com.intellij.psi.formatter.xml.HtmlPolicy;
 import com.intellij.psi.formatter.xml.SyntheticBlock;
@@ -23,8 +24,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-
-import static com.intellij.psi.formatter.WrappingUtil.getWrapType;
 
 /**
  * Template aware formatter which provides formatting for Handlebars/Mustache syntax and delegates formatting
@@ -89,8 +88,7 @@ public final class HbFormattingModelBuilder extends TemplateLanguageFormattingMo
   }
 
   private static class HandlebarsTagBlock extends HandlebarsBlock {
-    @NotNull
-    private final Alignment myChildAttributeAlignment;
+    private final @NotNull Alignment myChildAttributeAlignment;
 
 
     HandlebarsTagBlock(@NotNull ASTNode node,
@@ -105,9 +103,8 @@ public final class HbFormattingModelBuilder extends TemplateLanguageFormattingMo
       myChildAttributeAlignment = Alignment.createAlignment();
     }
 
-    @NotNull
     @Override
-    public ChildAttributes getChildAttributes(int newChildIndex) {
+    public @NotNull ChildAttributes getChildAttributes(int newChildIndex) {
       if (newChildIndex > 0) {
         List<Block> blocks = getSubBlocks();
         if (blocks.size() > newChildIndex - 1) {
@@ -136,7 +133,7 @@ public final class HbFormattingModelBuilder extends TemplateLanguageFormattingMo
     @Override
     protected Wrap createChildWrap(ASTNode child) {
       if (isAttribute(child)) {
-        return Wrap.createWrap(getWrapType(myHtmlPolicy.getAttributesWrap()), false);
+        return Wrap.createWrap(WrappingUtil.getWrapType(myHtmlPolicy.getAttributesWrap()), false);
       }
       return null;
     }
@@ -149,8 +146,7 @@ public final class HbFormattingModelBuilder extends TemplateLanguageFormattingMo
 
   private static class HandlebarsBlock extends TemplateLanguageBlock {
 
-    @NotNull
-    protected final HtmlPolicy myHtmlPolicy;
+    protected final @NotNull HtmlPolicy myHtmlPolicy;
 
 
     HandlebarsBlock(@NotNull ASTNode node,
@@ -232,7 +228,7 @@ public final class HbFormattingModelBuilder extends TemplateLanguageFormattingMo
     @Override
     public Indent getIndent() {
       // ignore whitespace
-      if (myNode.getText().trim().length() == 0) {
+      if (myNode.getText().trim().isEmpty()) {
         return Indent.getNoneIndent();
       }
 
@@ -300,9 +296,8 @@ public final class HbFormattingModelBuilder extends TemplateLanguageFormattingMo
      * <p/>
      * This method handles indent and alignment on Enter.
      */
-    @NotNull
     @Override
-    public ChildAttributes getChildAttributes(int newChildIndex) {
+    public @NotNull ChildAttributes getChildAttributes(int newChildIndex) {
       /*
        * We indent if we're in a BLOCK_WRAPPER (note that this works nicely since Enter can only be invoked
        * INSIDE a block (i.e. after the open block 'stache).

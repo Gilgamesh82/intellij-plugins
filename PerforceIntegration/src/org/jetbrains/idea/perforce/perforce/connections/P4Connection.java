@@ -5,20 +5,23 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.idea.perforce.application.ConnectionKey;
-import org.jetbrains.idea.perforce.perforce.*;
+import org.jetbrains.idea.perforce.perforce.ConnectionId;
+import org.jetbrains.idea.perforce.perforce.ExecResult;
+import org.jetbrains.idea.perforce.perforce.PerforcePhysicalConnectionParametersI;
+import org.jetbrains.idea.perforce.perforce.PerforceTimeoutException;
 
 import java.io.File;
 import java.io.IOException;
 
 public interface P4Connection {
 
-  void runP4Command(PerforcePhysicalConnectionParametersI parameters, String[] p4args, ExecResult retVal, @Nullable final StringBuffer inputStream)
+  void runP4Command(PerforcePhysicalConnectionParametersI parameters, String[] p4args, ExecResult retVal, final @Nullable StringBuffer inputStream)
     throws VcsException, PerforceTimeoutException, IOException, InterruptedException;
 
-  ExecResult runP4CommandLine(final PerforceSettings settings, @NonNls final String[] strings, @Nullable final StringBuffer stringBuffer)
+  ExecResult runP4CommandLine(@NotNull PerforcePhysicalConnectionParametersI settings, final @NonNls String[] strings, final @Nullable StringBuffer stringBuffer)
     throws VcsException;
 
-  ExecResult runP4CommandLine(final PerforceSettings settings, @NonNls @NotNull String[] conArgs, @NonNls @NotNull String[] p4args, @Nullable final StringBuffer stringBuffer)
+  ExecResult runP4CommandLine(@NotNull PerforcePhysicalConnectionParametersI settings, @NonNls @NotNull String[] conArgs, @NonNls @NotNull String[] p4args, final @Nullable StringBuffer stringBuffer)
           throws VcsException;
 
   @NotNull
@@ -26,8 +29,7 @@ public interface P4Connection {
 
   ConnectionId getId();
   
-  @NotNull
-  default String getWorkingDir() {
+  default @NotNull String getWorkingDir() {
     return getWorkingDirectory().getPath();
   }
 

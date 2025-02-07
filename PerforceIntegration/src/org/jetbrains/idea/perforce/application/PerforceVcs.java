@@ -36,18 +36,22 @@ import com.intellij.openapi.vcs.annotate.AnnotationsWriteableFilesVfsListener;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.ChangeProvider;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
+import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager;
 import com.intellij.openapi.vcs.diff.DiffProvider;
 import com.intellij.openapi.vcs.history.VcsHistoryProvider;
 import com.intellij.openapi.vcs.history.VcsRevisionNumber;
 import com.intellij.openapi.vcs.merge.MergeProvider;
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment;
 import com.intellij.openapi.vcs.update.UpdateEnvironment;
+import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.util.ThreeState;
 import com.intellij.util.containers.MultiMap;
 import com.intellij.util.io.ReadOnlyAttributeUtil;
+import kotlin.coroutines.EmptyCoroutineContext;
 import kotlinx.coroutines.CoroutineScope;
+import kotlinx.coroutines.CoroutineScopeKt;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -67,12 +71,16 @@ import org.jetbrains.idea.perforce.perforce.jobs.PerforceJob;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import static com.intellij.platform.util.coroutines.CoroutineScopeKt.childScope;
+import static com.intellij.util.concurrency.AppJavaExecutorUtil.awaitCancellationAndDispose;
 
 public final class PerforceVcs extends AbstractVcs {
   public static final @NlsSafe String NAME = "Perforce";
   private static final VcsKey ourKey = createKey(NAME);
-  @NotNull private final CoroutineScope coroutineScope;
+
   private PerforceCheckinEnvironment myPerforceCheckinEnvironment;
   private PerforceUpdateEnvironment myPerforceUpdateEnvironment;
   private PerforceIntegrateEnvironment myPerforceIntegrateEnvironment;
@@ -90,7 +98,7 @@ public final class PerforceVcs extends AbstractVcs {
 
   private MergeProvider myMergeProvider;
 
-  private Disposable myDisposable;
+  private final AtomicReference<CoroutineScope> myActiveScope = new AtomicReference<>();
 
   private final Set<VirtualFile> myAsyncEditFiles = new HashSet<>();
 
@@ -98,22 +106,18 @@ public final class PerforceVcs extends AbstractVcs {
 
   private final ReentrantReadWriteLock myP4Lock = new ReentrantReadWriteLock();
 
-  public PerforceVcs(@NotNull Project project, @NotNull CoroutineScope coroutineScope) {
+  public PerforceVcs(@NotNull Project project) {
     super(project, NAME);
-    this.coroutineScope = coroutineScope;
     myMyEditFileProvider = new MyEditFileProvider();
   }
 
   @Override
-  @NotNull
-  public String getDisplayName() {
+  public @NotNull String getDisplayName() {
     return NAME;
   }
 
-  @Nls
-  @NotNull
   @Override
-  public String getShortNameWithMnemonic() {
+  public @Nls @NotNull String getShortNameWithMnemonic() {
     return PerforceBundle.message("perforce.name.with.mnemonic");
   }
 
@@ -127,8 +131,7 @@ public final class PerforceVcs extends AbstractVcs {
     return !PerforceSettings.getSettings(myProject).ENABLED;
   }
 
-  @Nullable
-  private <T> T validProvider(T initialValue) {
+  private @Nullable <T> T validProvider(T initialValue) {
     return getSettings().ENABLED ? initialValue : null;
   }
 
@@ -143,14 +146,12 @@ public final class PerforceVcs extends AbstractVcs {
   }
 
   @Override
-  @NotNull
-  public EditFileProvider getEditFileProvider() {
+  public @NotNull EditFileProvider getEditFileProvider() {
     return myMyEditFileProvider;
   }
 
   @Override
-  @NotNull
-  public PerforceCheckinEnvironment getCheckinEnvironment() {
+  public @NotNull PerforceCheckinEnvironment getCheckinEnvironment() {
     if (myPerforceCheckinEnvironment == null) {
       myPerforceCheckinEnvironment = new PerforceCheckinEnvironment(myProject, this);
     }
@@ -195,13 +196,22 @@ public final class PerforceVcs extends AbstractVcs {
       if (list == null) {
         list = changeListManager.getDefaultChangeList();
       }
-      operations.add(new P4EditOperation(list.getName(), vFile));
+      operations.add(new P4EditOperation(list.getName(), vFile, false));
     }
     VcsOperationLog.getInstance(myProject).queueOperations(operations, PerforceBundle.message("progress.title.perforce.edit"),
-                                                           PerformInBackgroundOption.ALWAYS_BACKGROUND);
+                                                           PerformInBackgroundOption.ALWAYS_BACKGROUND,
+                                                           () -> refreshFiles(vFiles));
   }
 
-  public void startAsyncEdit(VirtualFile... vFiles) {
+  public void refreshFiles(VirtualFile @NotNull ... filesToRefresh) {
+    List<VirtualFile> files = Arrays.asList(filesToRefresh);
+    LocalFileSystem.getInstance()
+      .refreshFiles(files, true, false, null);
+    asyncEditCompleted(files);
+    VcsDirtyScopeManager.getInstance(myProject).filesDirty(files, null);
+  }
+
+  public void startAsyncEdit(VirtualFile @NotNull ... vFiles) {
     synchronized (myAsyncEditFiles) {
       Collections.addAll(myAsyncEditFiles, vFiles);
     }
@@ -213,7 +223,13 @@ public final class PerforceVcs extends AbstractVcs {
     }
   }
 
-  public void asyncEditCompleted(VirtualFile file) {
+  public void asyncEditCompleted(@NotNull Collection<VirtualFile> files) {
+    synchronized (myAsyncEditFiles) {
+      myAsyncEditFiles.removeAll(files);
+    }
+  }
+
+  public void asyncEditCompleted(@NotNull VirtualFile file) {
     synchronized (myAsyncEditFiles) {
       myAsyncEditFiles.remove(file);
     }
@@ -224,8 +240,7 @@ public final class PerforceVcs extends AbstractVcs {
   }
 
   @Override
-  @NotNull
-  public UpdateEnvironment getUpdateEnvironment() {
+  public @NotNull UpdateEnvironment getUpdateEnvironment() {
     if (myPerforceUpdateEnvironment == null) {
       myPerforceUpdateEnvironment = new PerforceUpdateEnvironment(myProject);
     }
@@ -237,8 +252,7 @@ public final class PerforceVcs extends AbstractVcs {
     return PerforceSettings.getSettings(myProject);
   }
 
-  @Nullable
-  static public String getFileNameComplaint(P4File file) {
+  public static @Nullable String getFileNameComplaint(P4File file) {
     String filename = file.getLocalPath();
     if (StringUtil.containsAnyChar(filename, "@#%*")) {
       return PerforceBundle.message("file.wildcards.restricted", filename);
@@ -341,8 +355,7 @@ public final class PerforceVcs extends AbstractVcs {
   }
 
   @Override
-  @NotNull
-  public ChangeProvider getChangeProvider() {
+  public @NotNull ChangeProvider getChangeProvider() {
     if (getSettings().ENABLED) {
       return getOnlineChangeProvider();
     }
@@ -375,10 +388,13 @@ public final class PerforceVcs extends AbstractVcs {
 
   @Override
   public void activate() {
-    Disposable disposable = Disposer.newDisposable();
-    myDisposable = disposable;
+    CoroutineScope globalScope = PerforceDisposable.getCoroutineScope(myProject);
+    CoroutineScope activeScope = childScope(globalScope, "PerforceVcs", EmptyCoroutineContext.INSTANCE, true);
 
-    Disposer.register(disposable, PerforceVFSListener.createInstance(myProject, coroutineScope));
+    Disposable disposable = Disposer.newDisposable();
+    awaitCancellationAndDispose(activeScope, disposable);
+
+    Disposer.register(disposable, PerforceVFSListener.createInstance(myProject, activeScope));
 
     PerforceManager.getInstance(myProject).startListening(disposable);
     ((PerforceConnectionManager)PerforceConnectionManager.getInstance(myProject)).startListening(disposable);
@@ -393,29 +409,38 @@ public final class PerforceVcs extends AbstractVcs {
 
   @Override
   public void deactivate() {
-    if (myDisposable != null) {
-      Disposer.dispose(myDisposable);
-      myDisposable = null;
-    }
+    CoroutineScope oldScope = myActiveScope.getAndSet(null);
+    if (oldScope != null) CoroutineScopeKt.cancel(oldScope, null);
   }
 
   @Override
-  @NotNull
-  public PerforceCommittedChangesProvider getCommittedChangesProvider() {
+  public @NotNull PerforceCommittedChangesProvider getCommittedChangesProvider() {
     if (myCommittedChangesProvider == null) {
       myCommittedChangesProvider = new PerforceCommittedChangesProvider(myProject);
     }
     return myCommittedChangesProvider;
   }
 
-  public void runBackgroundTask(final @NlsContexts.ProgressTitle String title, @NotNull PerformInBackgroundOption option, final Runnable runnable) {
+  public void runBackgroundTask(@NotNull @NlsContexts.ProgressTitle String title,
+                                @NotNull PerformInBackgroundOption option,
+                                @NotNull Runnable runnable, @Nullable Runnable edtCallback) {
     if (ApplicationManager.getApplication().isUnitTestMode()) {
       runnable.run();
+      if (edtCallback != null) {
+        edtCallback.run();
+      }
     } else {
       ProgressManager.getInstance().run(new Task.Backgroundable(myProject, title, false, option) {
         @Override
         public void run(@NotNull ProgressIndicator indicator) {
           runnable.run();
+        }
+
+        @Override
+        public void onFinished() {
+          if (edtCallback != null) {
+            edtCallback.run();
+          }
         }
       });
 
@@ -423,8 +448,7 @@ public final class PerforceVcs extends AbstractVcs {
   }
 
   @Override
-  @Nullable
-  public VcsRevisionNumber parseRevisionNumber(final String revisionNumberString) {
+  public @Nullable VcsRevisionNumber parseRevisionNumber(final String revisionNumberString) {
     long revision;
     try {
       revision = Long.parseLong(revisionNumberString);
@@ -441,8 +465,7 @@ public final class PerforceVcs extends AbstractVcs {
   }
 
   @Override
-  @NotNull
-  public MergeProvider getMergeProvider() {
+  public @NotNull MergeProvider getMergeProvider() {
     if (myMergeProvider == null) {
       myMergeProvider = new PerforceMergeProvider(myProject);
     }
@@ -551,9 +574,8 @@ public final class PerforceVcs extends AbstractVcs {
     return -1;
   }
 
-  @NotNull
   @Override
-  public ThreeState mayRemoveChangeList(@NotNull LocalChangeList list, boolean explicitly) {
+  public @NotNull ThreeState mayRemoveChangeList(@NotNull LocalChangeList list, boolean explicitly) {
     List<ShelvedChange> shelvedChanges = PerforceManager.getInstance(myProject).getShelf().getShelvedChanges(list);
     if (!shelvedChanges.isEmpty()) {
       if (!explicitly) {

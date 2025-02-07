@@ -1,6 +1,7 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.angular2.web.references
 
+import com.intellij.lang.javascript.evaluation.JSTypeEvaluationLocationProvider
 import com.intellij.lang.javascript.psi.ecma6.ES6Decorator
 import com.intellij.model.Symbol
 import com.intellij.model.psi.PsiExternalReferenceHost
@@ -23,7 +24,6 @@ import org.angular2.entities.Angular2DirectiveSelector
 import org.angular2.entities.Angular2DirectiveSelectorSymbol
 import org.angular2.entities.Angular2EntitiesProvider
 import org.angular2.lang.html.psi.Angular2HtmlNgContentSelector
-import org.angular2.web.Angular2Symbol
 
 abstract class Angular2SelectorReferencesProvider : PsiSymbolReferenceProvider {
 
@@ -47,18 +47,31 @@ abstract class Angular2SelectorReferencesProvider : PsiSymbolReferenceProvider {
     }
   }
 
-  override fun getSearchRequests(project: Project,
-                                 target: Symbol): Collection<SearchRequest> {
+  override fun getSearchRequests(
+    project: Project,
+    target: Symbol,
+  ): Collection<SearchRequest> {
     return emptyList()
   }
 
-  override fun getReferences(element: PsiExternalReferenceHost,
-                             hints: PsiSymbolReferenceHints): Collection<PsiSymbolReference> {
+  override fun getReferences(
+    element: PsiExternalReferenceHost,
+    hints: PsiSymbolReferenceHints,
+  ): Collection<PsiSymbolReference> {
     val directiveSelector = getDirectiveSelector(element) ?: return emptyList()
+    return JSTypeEvaluationLocationProvider.withTypeEvaluationLocation(element) {
+      getReferencesInner(hints, directiveSelector)
+    }
+  }
+
+  private fun getReferencesInner(
+    hints: PsiSymbolReferenceHints,
+    directiveSelector: Angular2DirectiveSelector,
+  ): Collection<PsiSymbolReference> {
     val result = SmartList<PsiSymbolReference>()
     val add = { selector: Angular2DirectiveSelectorSymbol ->
-      if (!selector.isDeclaration) {
-        result.add(HtmlSelectorReference(selector))
+      if (selector.referencedSymbol != null) {
+        result.add(SelectorSymbolReference(selector))
       }
     }
     val offsetInTheElement = hints.offsetInElement
@@ -89,25 +102,17 @@ abstract class Angular2SelectorReferencesProvider : PsiSymbolReferenceProvider {
 
   protected abstract fun getDirectiveSelector(element: PsiExternalReferenceHost): Angular2DirectiveSelector?
 
-  private class HtmlSelectorReference(private val mySelectorSymbol: Angular2DirectiveSelectorSymbol) : WebSymbolReference {
+  private class SelectorSymbolReference(private val mySelectorSymbol: Angular2DirectiveSelectorSymbol) : WebSymbolReference {
 
-    override fun getElement(): PsiElement {
-      return mySelectorSymbol.sourceElement
-    }
+    override fun getElement(): PsiElement =
+      mySelectorSymbol.sourceElement
 
-    override fun getRangeInElement(): TextRange {
-      return mySelectorSymbol.textRangeInSourceElement
-    }
+    override fun getRangeInElement(): TextRange =
+      mySelectorSymbol.textRangeInSourceElement
 
-    override fun resolveReference(): Collection<WebSymbol> {
-      val symbols = mySelectorSymbol.referencedSymbols
-      val nonSelectorSymbols = symbols.filter { it !is Angular2Symbol }
-      return if (!nonSelectorSymbols.isEmpty()) {
-        nonSelectorSymbols
+    override fun resolveReference(): Collection<WebSymbol> =
+      JSTypeEvaluationLocationProvider.withTypeEvaluationLocation(element) {
+        listOf(mySelectorSymbol.referencedSymbol ?: mySelectorSymbol)
       }
-      else {
-        symbols
-      }
-    }
   }
 }

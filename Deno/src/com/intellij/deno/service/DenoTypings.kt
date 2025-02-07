@@ -9,14 +9,18 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.progress.util.BackgroundTaskUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtil
+import com.intellij.openapi.vfs.JarFileSystem
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
-import java.io.File
-import java.io.FileNotFoundException
+import com.intellij.util.io.URLUtil
 import java.io.IOException
+import java.net.URL
+import java.nio.file.Files
+import java.nio.file.Path
 
 
 @Service(Service.Level.PROJECT)
@@ -28,69 +32,79 @@ class DenoTypings(val project: Project) : Disposable {
 
   fun reloadAsync() {
     BackgroundTaskUtil.executeOnPooledThread(this) {
-      if (reload()) {
+      if (saveDenoTypings()) {
         ApplicationManager.getApplication().invokeLater({
-          val service = DenoSettings.getService(project)
-          service.updateLibraries()
-        }, project.disposed)
+                                                          val service = DenoSettings.getService(project)
+                                                          service.updateLibraries()
+                                                        }, project.disposed)
       }
     }
   }
 
   @Synchronized
-  fun reload(): Boolean {
+  fun saveDenoTypings(): Boolean {
     val denoDirectory = getGeneratedDenoTypings()
-
     val commandLine = GeneralCommandLine(DenoSettings.getService(project).getDenoPath(), "types")
 
     val output = try {
       execAndGetOutput(commandLine)
     }
-    catch (e: ExecutionException) {
+    catch (_: ExecutionException) {
       return false
     }
-    val file = File(denoDirectory)
+
+    if (output.exitCode != 0) return false
+    val file = Path.of(FileUtil.toSystemDependentName(denoDirectory))
     val oldContent = try {
-      FileUtil.loadFile(file)
+      Files.readString(file)
     }
-    catch (e: FileNotFoundException) {
+    catch (_: IOException) {
       ""
     }
-    catch (e: IOException) {
-      return false
-    }
 
-    if (output.exitCode == 0) {
-      val stdout = output.stdout
-      if (oldContent != stdout) {
-        FileUtil.writeToFile(file, stdout)
-        return true
-      }
+    val stdout = output.stdout
+    if (oldContent == stdout) return false
+
+    try {
+      Files.createDirectories(file.parent)
+      Files.writeString(file, stdout)
     }
-    return false
+    catch (e: IOException) {
+      logger<DenoTypings>().warn(e)
+    }
+    return true
   }
 
+  /** path to the file on a local file system */
   private fun getDenoTypings(): String {
     return FileUtil.toSystemIndependentName(getGeneratedDenoTypings())
   }
 
-  private fun getBundledTypings(): String {
-    return FileUtil.toSystemIndependentName(DenoUtil.getDenoTypings())
+  /** url to the file either on a local file system or in a jar */
+  private fun getBundledTypings(): URL {
+    return DenoUtil.getDenoTypings()
   }
-  
-  public fun isDenoTypings(virtualFile: VirtualFile): Boolean {
+
+  fun isDenoTypings(virtualFile: VirtualFile): Boolean {
     val path = virtualFile.path
-    return path == getDenoTypings() || path == getGeneratedDenoTypings()
-  } 
-  
+    return path == getDenoTypings() || path == getBundledTypings().path.removePrefix("file:") // removing prefix in case of 'jar:file:...'
+  }
+
   fun getDenoTypingsVirtualFile(): VirtualFile? {
     val typings = LocalFileSystem.getInstance().findFileByPath(getDenoTypings())
     if (typings != null && typings.isValid) return typings
-    return LocalFileSystem.getInstance().findFileByPath(getBundledTypings())
+    val bundled = getBundledTypings()
+    return when (bundled.protocol) {
+      URLUtil.JAR_PROTOCOL -> JarFileSystem.getInstance().findFileByPath(URL(bundled.path).path)
+      URLUtil.FILE_PROTOCOL -> LocalFileSystem.getInstance().findFileByPath(bundled.path)
+      else -> error("Unsupported protocol '${bundled.protocol}' for bundled Deno typings file '$bundled'")
+    }?.also {
+      require(isDenoTypings(it))
+    }
   }
 
   private fun getGeneratedDenoTypings() =
-    PathManager.getSystemPath() + File.separatorChar + "javascript" + File.separatorChar + "deno" + File.separatorChar + "deno.d.ts"
+    "${PathManager.getSystemPath()}/javascript/deno/deno.d.ts"
 
   override fun dispose() {}
 }

@@ -1,4 +1,4 @@
-// Copyright 2000-2021 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.jetbrains.lang.dart.projectWizard;
 
 import com.intellij.icons.AllIcons;
@@ -6,12 +6,14 @@ import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.ide.util.projectWizard.SettingsStep;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.ui.ComboBox;
+import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.util.text.HtmlBuilder;
 import com.intellij.openapi.util.text.HtmlChunk;
 import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.platform.ProjectGeneratorPeer;
 import com.intellij.platform.WebProjectGenerator;
 import com.intellij.ui.ColorUtil;
 import com.intellij.ui.ComboboxWithBrowseButton;
@@ -34,7 +36,7 @@ import java.awt.*;
 import java.util.List;
 import java.util.stream.IntStream;
 
-public class DartGeneratorPeer implements WebProjectGenerator.GeneratorPeer<DartProjectWizardData> {
+public class DartGeneratorPeer implements ProjectGeneratorPeer<DartProjectWizardData> {
   private static final String DART_PROJECT_TEMPLATE = "DART_PROJECT_TEMPLATE";
   private static final String CREATE_SAMPLE_UNCHECKED = "CREATE_SAMPLE_UNCHECKED";
 
@@ -94,7 +96,7 @@ public class DartGeneratorPeer implements WebProjectGenerator.GeneratorPeer<Dart
     final JTextComponent editorComponent = (JTextComponent)mySdkPathComboWithBrowse.getComboBox().getEditor().getEditorComponent();
     editorComponent.getDocument().addDocumentListener(new DocumentAdapter() {
       @Override
-      protected void textChanged(@NotNull final DocumentEvent e) {
+      protected void textChanged(final @NotNull DocumentEvent e) {
         final String sdkPath = mySdkPathComboWithBrowse.getComboBox().getEditor().getItem().toString().trim();
         final String message = DartSdkUtil.getErrorMessageIfWrongSdkRootPath(sdkPath);
         if (message == null) {
@@ -223,9 +225,12 @@ public class DartGeneratorPeer implements WebProjectGenerator.GeneratorPeer<Dart
     }
   }
 
-  @NotNull
   @Override
-  public JComponent getComponent() {
+  public @NotNull JComponent getComponent(@NotNull TextFieldWithBrowseButton myLocationField, @NotNull Runnable checkValid) {
+    return myMainPanel;
+  }
+
+  @NotNull JPanel getMainPanel() {
     return myMainPanel;
   }
 
@@ -236,9 +241,8 @@ public class DartGeneratorPeer implements WebProjectGenerator.GeneratorPeer<Dart
     settingsStep.addSettingsComponent(myTemplatesPanel);
   }
 
-  @NotNull
   @Override
-  public DartProjectWizardData getSettings() {
+  public @NotNull DartProjectWizardData getSettings() {
     final String sdkPath = FileUtil.toSystemIndependentName(mySdkPathComboWithBrowse.getComboBox().getEditor().getItem().toString().trim());
     final DartProjectTemplate template = myCreateSampleProjectCheckBox.isSelected() ? myTemplatesList.getSelectedValue() : null;
     PropertiesComponent.getInstance().setValue(DART_PROJECT_TEMPLATE, template == null ? CREATE_SAMPLE_UNCHECKED : template.getName());
@@ -246,9 +250,8 @@ public class DartGeneratorPeer implements WebProjectGenerator.GeneratorPeer<Dart
     return new DartProjectWizardData(sdkPath, template);
   }
 
-  @Nullable
   @Override
-  public ValidationInfo validate() {
+  public @Nullable ValidationInfo validate() {
     final String sdkPath = mySdkPathComboWithBrowse.getComboBox().getEditor().getItem().toString().trim();
     final String message = DartSdkUtil.getErrorMessageIfWrongSdkRootPath(sdkPath);
     if (message != null) {
@@ -291,7 +294,7 @@ public class DartGeneratorPeer implements WebProjectGenerator.GeneratorPeer<Dart
     final JTextComponent editorComponent = (JTextComponent)mySdkPathComboWithBrowse.getComboBox().getEditor().getEditorComponent();
     editorComponent.getDocument().addDocumentListener(new DocumentAdapter() {
       @Override
-      protected void textChanged(@NotNull final DocumentEvent e) {
+      protected void textChanged(final @NotNull DocumentEvent e) {
         validateInIntelliJ();
       }
     });
@@ -311,7 +314,7 @@ public class DartGeneratorPeer implements WebProjectGenerator.GeneratorPeer<Dart
     final JTextComponent editorComponent = (JTextComponent)mySdkPathComboWithBrowse.getComboBox().getEditor().getEditorComponent();
     editorComponent.getDocument().addDocumentListener(new DocumentAdapter() {
       @Override
-      protected void textChanged(@NotNull final DocumentEvent e) {
+      protected void textChanged(final @NotNull DocumentEvent e) {
         stateListener.stateChanged(validate() == null);
       }
     });

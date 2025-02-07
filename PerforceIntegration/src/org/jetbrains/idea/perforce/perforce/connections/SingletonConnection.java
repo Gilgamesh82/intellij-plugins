@@ -15,6 +15,7 @@
  */
 package org.jetbrains.idea.perforce.perforce.connections;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.diff.impl.patch.formove.FilePathComparator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
@@ -32,6 +33,7 @@ import org.jetbrains.idea.perforce.perforce.PerforcePhysicalConnectionParameters
 import org.jetbrains.idea.perforce.perforce.PerforceSettings;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,8 +41,9 @@ import java.util.Map;
 import static java.util.function.Function.identity;
 
 public class SingletonConnection extends AbstractP4Connection implements PerforceConnectionMapper {
+  private static final Logger LOG = Logger.getInstance(SingletonConnection.class);
 
-  private final static Key<SingletonConnection> KEY_IN_PROJECT = new Key<>("Connection per project");
+  private static final Key<SingletonConnection> KEY_IN_PROJECT = new Key<>("Connection per project");
   public static final ConnectionId SINGLETON_CONNECTION_ID = new ConnectionId();
   public static final File CURR_DIR = new File(".");
   private final PerforceSettings mySettings;
@@ -73,15 +76,13 @@ public class SingletonConnection extends AbstractP4Connection implements Perforc
   }
 
   @Override
-  @NotNull
-  public File getWorkingDirectory() {
+  public @NotNull File getWorkingDirectory() {
     VirtualFile[] roots = ProjectLevelVcsManager.getInstance(myProject).getRootsUnderVcs(PerforceVcs.getInstance(myProject));
     return roots.length > 0 ? VfsUtilCore.virtualToIoFile(roots[0]) : CURR_DIR;
   }
 
-  @NotNull
   @Override
-  public ConnectionKey getConnectionKey() {
+  public @NotNull ConnectionKey getConnectionKey() {
     return new ConnectionKey(mySettings.port, mySettings.client, mySettings.user);
   }
 
@@ -97,6 +98,9 @@ public class SingletonConnection extends AbstractP4Connection implements Perforc
 
   @Override
   public P4Connection getConnection(@NotNull VirtualFile file) {
+    if (!file.isInLocalFileSystem()) {
+      LOG.warn("Trying to get connection for non-local file " + file.getClass() + " " + file);
+    }
     // todo check directories?
     // todo don't forget this optimization point
     return this;
@@ -106,7 +110,7 @@ public class SingletonConnection extends AbstractP4Connection implements Perforc
   public Map<VirtualFile, P4Connection> getAllConnections() {
     final Project project = mySettings.getProject();
     final List<VirtualFile> files = ProjectLevelVcsManager.getInstance(project).getRootsUnderVcsWithoutFiltering(PerforceVcs.getInstance(project));
-    new FilterDescendantVirtualFileConvertible<>(identity(), FilePathComparator.getInstance()).doFilter(files);
+    new FilterDescendantVirtualFileConvertible<>(identity(), FilePathComparator.getInstance()).doFilter(new ArrayList<>(files));
     final HashMap<VirtualFile, P4Connection> map = new HashMap<>();
     for (VirtualFile file : files) {
       map.put(file, this);

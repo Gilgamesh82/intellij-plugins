@@ -1,4 +1,4 @@
-// Copyright 2000-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.jetbrains.lang.dart.ide.generation;
 
 import com.intellij.codeInsight.template.Template;
@@ -6,6 +6,7 @@ import com.intellij.codeInsight.template.TemplateManager;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.NlsContexts;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import com.jetbrains.lang.dart.DartBundle;
@@ -14,6 +15,7 @@ import com.jetbrains.lang.dart.ide.hierarchy.type.DartServerTypeHierarchyTreeStr
 import com.jetbrains.lang.dart.psi.DartClass;
 import com.jetbrains.lang.dart.psi.DartComponent;
 import com.jetbrains.lang.dart.psi.DartComponentName;
+import com.jetbrains.lang.dart.sdk.DartSdk;
 import org.dartlang.analysis.server.protocol.TypeHierarchyItem;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,8 +25,9 @@ import java.util.Set;
 public class CreateEqualsAndHashcodeFix extends BaseCreateMethodsFix<DartComponent> {
 
   private boolean mySuperclassOverridesEqualEqualAndHashCode;
+  private boolean supportsObjectHashMethods = false;
 
-  public CreateEqualsAndHashcodeFix(@NotNull final DartClass dartClass) {
+  public CreateEqualsAndHashcodeFix(final @NotNull DartClass dartClass) {
     super(dartClass);
   }
 
@@ -32,12 +35,15 @@ public class CreateEqualsAndHashcodeFix extends BaseCreateMethodsFix<DartCompone
   public void beforeInvoke(@NotNull Project project, Editor editor, PsiElement file) {
     super.beforeInvoke(project, editor, file);
     mySuperclassOverridesEqualEqualAndHashCode = doesSuperclassOverrideEqualEqualAndHashCode(myDartClass);
+
+    final DartSdk sdk = DartSdk.getDartSdk(project);
+    supportsObjectHashMethods = sdk == null || StringUtil.compareVersionNumbers(sdk.getVersion(), "2.14") >= 0;
   }
 
   @Override
-  protected void processElements(@NotNull final Project project,
-                                 @NotNull final Editor editor,
-                                 @NotNull final Set<DartComponent> elementsToProcess) {
+  protected void processElements(final @NotNull Project project,
+                                 final @NotNull Editor editor,
+                                 final @NotNull Set<DartComponent> elementsToProcess) {
     final TemplateManager templateManager = TemplateManager.getInstance(project);
     anchor = doAddMethodsForOne(editor, templateManager, buildFunctionsText(templateManager, elementsToProcess), anchor);
   }
@@ -49,12 +55,11 @@ public class CreateEqualsAndHashcodeFix extends BaseCreateMethodsFix<DartCompone
   }
 
   @Override
-  @NotNull
-  protected String getNothingFoundMessage() {
+  protected @NotNull String getNothingFoundMessage() {
     return ""; // can't be called actually because processElements() is overridden
   }
 
-  private static boolean doesSuperclassOverrideEqualEqualAndHashCode(@NotNull final DartClass dartClass) {
+  private static boolean doesSuperclassOverrideEqualEqualAndHashCode(final @NotNull DartClass dartClass) {
     final Project project = dartClass.getProject();
     final VirtualFile file = dartClass.getContainingFile().getVirtualFile();
     final DartComponentName name = dartClass.getComponentName();
@@ -94,20 +99,55 @@ public class CreateEqualsAndHashcodeFix extends BaseCreateMethodsFix<DartCompone
 
     template.addTextSegment("@override\n");
     template.addTextSegment("int get hashCode => ");
-    boolean firstItem = true;
-    if (mySuperclassOverridesEqualEqualAndHashCode) {
-      template.addTextSegment("super.hashCode");
-      firstItem = false;
-    }
-    for (DartComponent component : elementsToProcess) {
-      if (!firstItem) {
-        template.addTextSegment(" ^ ");
-      }
-      template.addTextSegment(component.getName() + ".hashCode");
-      firstItem = false;
-    }
-    if (!mySuperclassOverridesEqualEqualAndHashCode && elementsToProcess.isEmpty()) {
+
+    final int totalItems = elementsToProcess.size() + (mySuperclassOverridesEqualEqualAndHashCode ? 1 : 0);
+    if (totalItems <= 0) {
       template.addTextSegment("0");
+    }
+    else if (supportsObjectHashMethods && totalItems > 1) {
+      // hash() accepts up to 20 args, see https://api.flutter.dev/flutter/dart-core/Object/hash.html
+      final boolean useHashAll = totalItems > 20;
+      if (useHashAll) {
+        template.addTextSegment("Object.hashAll(");
+        template.addTextSegment("[");
+      }
+      else {
+        template.addTextSegment("Object.hash(");
+      }
+
+      boolean shouldPrependComma = false;
+      if (mySuperclassOverridesEqualEqualAndHashCode) {
+        template.addTextSegment("super.hashCode");
+        shouldPrependComma = true;
+      }
+
+      for (final DartComponent component : elementsToProcess) {
+        if (shouldPrependComma) {
+          template.addTextSegment(",");
+        }
+        template.addTextSegment(String.valueOf(component.getName()));
+        shouldPrependComma = true;
+      }
+
+      if (useHashAll) {
+        template.addTextSegment("]");
+      }
+
+      template.addTextSegment(")");
+    }
+    else {
+      boolean firstItem = true;
+      if (mySuperclassOverridesEqualEqualAndHashCode) {
+        template.addTextSegment("super.hashCode");
+        firstItem = false;
+      }
+      for (DartComponent component : elementsToProcess) {
+        if (!firstItem) {
+          template.addTextSegment(" ^ ");
+        }
+        template.addTextSegment(component.getName() + ".hashCode");
+        firstItem = false;
+      }
     }
     template.addTextSegment(";\n");
     template.addTextSegment(" "); // trailing space is removed when auto-reformatting, but it helps to enter line break if needed

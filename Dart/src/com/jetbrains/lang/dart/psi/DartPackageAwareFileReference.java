@@ -1,6 +1,7 @@
-// Copyright 2000-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.jetbrains.lang.dart.psi;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
@@ -23,7 +24,7 @@ import static com.jetbrains.lang.dart.util.DartUrlResolver.PACKAGES_FOLDER_NAME;
 import static com.jetbrains.lang.dart.util.DartUrlResolver.PACKAGE_PREFIX;
 
 class DartPackageAwareFileReference extends FileReference {
-  @NotNull private final DartUrlResolver myDartResolver;
+  private final @NotNull DartUrlResolver myDartResolver;
 
   DartPackageAwareFileReference(@NotNull FileReferenceSet fileReferenceSet,
                                 TextRange range,
@@ -35,7 +36,7 @@ class DartPackageAwareFileReference extends FileReference {
   }
 
   @Override
-  protected ResolveResult @NotNull [] innerResolve(final boolean caseSensitive, @NotNull final PsiFile containingFile) {
+  protected ResolveResult @NotNull [] innerResolve(final boolean caseSensitive, final @NotNull PsiFile containingFile) {
     if (PACKAGES_FOLDER_NAME.equals(getText())) {
       final VirtualFile pubspecYamlFile = myDartResolver.getPubspecYamlFile();
       final VirtualFile packagesDir = pubspecYamlFile == null ? null : pubspecYamlFile.getParent().findChild(PACKAGES_FOLDER_NAME);
@@ -44,11 +45,12 @@ class DartPackageAwareFileReference extends FileReference {
         return new ResolveResult[]{new PsiElementResolveResult(psiDirectory)};
       }
 
-      DartSdk sdk = DartSdk.getDartSdk(containingFile.getProject());
+      final Project project = containingFile.getProject();
+      DartSdk sdk = DartSdk.getDartSdk(project);
       VirtualFile packagesFile;
       if (sdk != null && pubspecYamlFile != null) {
         if (DartAnalysisServerService.isDartSdkVersionSufficientForPackageConfigJson(sdk)) {
-          packagesFile = DotPackagesFileUtil.getPackageConfigJsonFile(pubspecYamlFile);
+          packagesFile = DotPackagesFileUtil.getPackageConfigJsonFile(project, pubspecYamlFile);
         }
         else {
           packagesFile = pubspecYamlFile.getParent().findChild(DotPackagesFileUtil.DOT_PACKAGES);
@@ -108,7 +110,7 @@ class DartPackageAwareFileReference extends FileReference {
   }
 
   @Override
-  public PsiElement bindToElement(@NotNull final PsiElement element, final boolean absolute) throws IncorrectOperationException {
+  public PsiElement bindToElement(final @NotNull PsiElement element, final boolean absolute) throws IncorrectOperationException {
     final String path = getFileReferenceSet().getPathString();
 
     if (path.startsWith(PACKAGES_FOLDER_NAME + "/") || path.contains("/" + PACKAGES_FOLDER_NAME + "/")) {

@@ -1,4 +1,4 @@
-// Copyright 2000-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.javascript.karma.execution;
 
 import com.intellij.execution.Executor;
@@ -23,6 +23,7 @@ import com.intellij.openapi.options.SettingsEditor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.InvalidDataException;
 import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.util.io.NioFiles;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -34,7 +35,8 @@ import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class KarmaRunConfiguration extends AbstractNodeTargetRunProfile
                                    implements RefactoringListenerProvider,
@@ -58,8 +60,7 @@ public class KarmaRunConfiguration extends AbstractNodeTargetRunProfile
     KarmaRunSettingsSerializationUtil.writeXml(element, myRunSettings);
   }
 
-  @NotNull
-  public NodePackage getKarmaPackage() {
+  public @NotNull NodePackage getKarmaPackage() {
     if (isTemplate()) {
       NodePackage pkg = myRunSettings.getKarmaPackage();
       return pkg != null ? pkg : KarmaUtil.PKG_DESCRIPTOR.createPackage("");
@@ -71,8 +72,7 @@ public class KarmaRunConfiguration extends AbstractNodeTargetRunProfile
     return karmaPackage;
   }
 
-  @NotNull
-  private NodePackage getOrInitKarmaPackage() {
+  private @NotNull NodePackage getOrInitKarmaPackage() {
     NodePackage pkg = myRunSettings.getKarmaPackage();
     if (pkg == null) {
       Project project = getProject();
@@ -90,8 +90,7 @@ public class KarmaRunConfiguration extends AbstractNodeTargetRunProfile
     return pkg;
   }
 
-  @Nullable
-  private VirtualFile getContextFile() {
+  private @Nullable VirtualFile getContextFile() {
     VirtualFile f = findFile(myRunSettings.getTestFileSystemDependentPath());
     if (f == null) {
       f = findFile(myRunSettings.getConfigPathSystemDependent());
@@ -102,32 +101,27 @@ public class KarmaRunConfiguration extends AbstractNodeTargetRunProfile
     return f;
   }
 
-  @NotNull
   @Override
-  public KarmaConsoleProperties createTestConsoleProperties(@NotNull Executor executor) {
+  public @NotNull KarmaConsoleProperties createTestConsoleProperties(@NotNull Executor executor) {
     return createTestConsoleProperties(executor, null);
   }
 
-  @NotNull
-  public KarmaConsoleProperties createTestConsoleProperties(@NotNull Executor executor, @Nullable KarmaServer server) {
+  public @NotNull KarmaConsoleProperties createTestConsoleProperties(@NotNull Executor executor, @Nullable KarmaServer server) {
     KarmaTestProxyFilterProvider filterProvider = new KarmaTestProxyFilterProvider(getProject(), server);
     return new KarmaConsoleProperties(this, executor, filterProvider);
   }
 
-  @Nullable
   @Override
-  public NodeJsInterpreter getInterpreter() {
+  public @Nullable NodeJsInterpreter getInterpreter() {
     return myRunSettings.getInterpreterRef().resolve(getProject());
   }
 
-  @NotNull
   @Override
-  public SettingsEditor<? extends AbstractNodeTargetRunProfile> createConfigurationEditor() {
+  public @NotNull SettingsEditor<? extends AbstractNodeTargetRunProfile> createConfigurationEditor() {
     return new KarmaRunConfigurationEditor(getProject());
   }
 
-  @Nullable
-  private static VirtualFile findFile(@NotNull String path) {
+  private static @Nullable VirtualFile findFile(@NotNull String path) {
     return FileUtil.isAbsolute(path) ? LocalFileSystem.getInstance().findFileByPath(path) : null;
   }
 
@@ -151,9 +145,8 @@ public class KarmaRunConfiguration extends AbstractNodeTargetRunProfile
     }
   }
 
-  @Nullable
   @Override
-  public RunProfileState getState(@NotNull Executor executor, @NotNull ExecutionEnvironment env) {
+  public @Nullable RunProfileState getState(@NotNull Executor executor, @NotNull ExecutionEnvironment env) {
     return new KarmaRunProfileState(getProject(),
                                     this,
                                     env,
@@ -183,16 +176,16 @@ public class KarmaRunConfiguration extends AbstractNodeTargetRunProfile
     if (StringUtil.isEmptyOrSpaces(path)) {
       throw new RuntimeConfigurationError(KarmaBundle.message("run_configuration.unspecified_field.dialog.message", pathLabelName));
     }
-    File file = new File(path);
-    if (!file.isAbsolute() ||
-        (fileExpected && !file.isFile()) ||
-        (!fileExpected && !file.isDirectory())) {
+    Path nioFile = NioFiles.toPath(path);
+    if (nioFile == null ||
+        !nioFile.isAbsolute() ||
+        (fileExpected && !Files.isRegularFile(nioFile)) ||
+        (!fileExpected && !Files.isDirectory(nioFile))) {
       throw new RuntimeConfigurationError(KarmaBundle.message("run_configuration.no_such_file.dialog.message", pathLabelName));
     }
   }
 
-  @NotNull
-  public KarmaRunSettings getRunSettings() {
+  public @NotNull KarmaRunSettings getRunSettings() {
     return myRunSettings;
   }
 
@@ -234,9 +227,8 @@ public class KarmaRunConfiguration extends AbstractNodeTargetRunProfile
     return super.suggestedName();
   }
 
-  @Nullable
   @Override
-  public String getActionName() {
+  public @Nullable String getActionName() {
     KarmaScopeKind scopeKind = myRunSettings.getScopeKind();
     if (scopeKind == KarmaScopeKind.SUITE || scopeKind == KarmaScopeKind.TEST) {
       return StringUtil.notNullize(ContainerUtil.getLastItem(myRunSettings.getTestNames()));
@@ -244,9 +236,8 @@ public class KarmaRunConfiguration extends AbstractNodeTargetRunProfile
     return super.getActionName();
   }
 
-  @Nullable
   @Override
-  public RefactoringElementListener getRefactoringElementListener(PsiElement element) {
+  public @Nullable RefactoringElementListener getRefactoringElementListener(PsiElement element) {
     return KarmaRunConfigurationRefactoringHandler.getRefactoringElementListener(this, element);
   }
 

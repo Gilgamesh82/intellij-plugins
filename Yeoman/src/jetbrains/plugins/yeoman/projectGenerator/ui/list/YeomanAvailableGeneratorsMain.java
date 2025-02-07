@@ -19,6 +19,7 @@ import jetbrains.plugins.yeoman.generators.YeomanGeneratorListProvider;
 import jetbrains.plugins.yeoman.generators.YeomanInstalledGeneratorInfo;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 import java.awt.*;
 import java.util.List;
@@ -26,7 +27,7 @@ import java.util.Map;
 
 public class YeomanAvailableGeneratorsMain extends YeomanGeneratorsMain {
   private final YeomanGeneratorListProvider myProvider;
-  private Map<String, YeomanInstalledGeneratorInfo> myInstalledGenerators;
+  private @Unmodifiable Map<String, YeomanInstalledGeneratorInfo> myInstalledGenerators;
   private boolean myBusy = false;
 
   public YeomanAvailableGeneratorsMain(@NotNull List<YeomanInstalledGeneratorInfo> installedGenerators,
@@ -119,8 +120,7 @@ public class YeomanAvailableGeneratorsMain extends YeomanGeneratorsMain {
   }
 
   @Override
-  @Nullable
-  public YeomanInstalledGeneratorInfo getInstalledGeneratorInfo(@Nullable YeomanGeneratorInfo info) {
+  public @Nullable YeomanInstalledGeneratorInfo getInstalledGeneratorInfo(@Nullable YeomanGeneratorInfo info) {
     if (info == null) return null;
 
     final YeomanInstalledGeneratorInfo installedGeneratorInfo = myInstalledGenerators.get(info.getName());

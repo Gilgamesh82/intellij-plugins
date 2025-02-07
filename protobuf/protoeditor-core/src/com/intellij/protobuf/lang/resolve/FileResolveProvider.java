@@ -20,8 +20,8 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileFilter;
-import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.protobuf.lang.PbFileType;
+import com.intellij.psi.search.GlobalSearchScope;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -55,6 +55,7 @@ public interface FileResolveProvider {
       return name;
     }
 
+    @Override
     public String toString() {
       return name;
     }
@@ -98,8 +99,7 @@ public interface FileResolveProvider {
    * @param module The module whose child is performing the search.
    * @return The {@link VirtualFile} representing the located path, or <code>null</code>.
    */
-  @Nullable
-  default VirtualFile findFile(@NotNull String path, @NotNull Module module) {
+  default @Nullable VirtualFile findFile(@NotNull String path, @NotNull Module module) {
     return findFile(path, module.getProject());
   }
 
@@ -126,8 +126,7 @@ public interface FileResolveProvider {
    * @param module The module whose child is performing the search.
    * @return A list of child proto file and directory names.
    */
-  @NotNull
-  default Collection<ChildEntry> getChildEntries(@NotNull String path, @NotNull Module module) {
+  default @NotNull Collection<ChildEntry> getChildEntries(@NotNull String path, @NotNull Module module) {
     return getChildEntries(path, module.getProject());
   }
 
@@ -146,8 +145,7 @@ public interface FileResolveProvider {
    * @param module The module whose child is performing the search.
    * @return The descriptor file, or <code>null</code> if it cannot be found.
    */
-  @Nullable
-  default VirtualFile getDescriptorFile(@NotNull Module module) {
+  default @Nullable VirtualFile getDescriptorFile(@NotNull Module module) {
     return getDescriptorFile(module.getProject());
   }
 

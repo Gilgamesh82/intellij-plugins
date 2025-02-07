@@ -121,18 +121,24 @@ public final class VcsOperationLog implements PersistentStateComponent<VcsOperat
 
   }
   public void queueOperations(final List<? extends VcsOperation> operations, final @NlsContexts.ProgressTitle String title, final PerformInBackgroundOption option) {
+    queueOperations(operations, title, option, null);
+  }
+
+  public void queueOperations(final List<? extends VcsOperation> operations,
+                              final @NlsContexts.ProgressTitle String title,
+                              final PerformInBackgroundOption option,
+                              @Nullable Runnable edtCallback) {
     List<VcsException> exceptions = new ArrayList<>();
     Runnable runnable = enqueueOperations(operations, title, option, exceptions);
 
     if (runnable == null) return;
-    PerforceVcs.getInstance(myProject).runBackgroundTask(title, option, runnable);
+    PerforceVcs.getInstance(myProject).runBackgroundTask(title, option, runnable, edtCallback);
   }
 
-  @Nullable
-  private Runnable enqueueOperations(List<? extends VcsOperation> operations,
-                                     final @NlsContexts.TabTitle String title,
-                                     final PerformInBackgroundOption option,
-                                     final List<VcsException> exceptions) {
+  private @Nullable Runnable enqueueOperations(List<? extends VcsOperation> operations,
+                                               final @NlsContexts.TabTitle String title,
+                                               final PerformInBackgroundOption option,
+                                               final List<VcsException> exceptions) {
     synchronized (lock) {
       for (VcsOperation operation : operations) {
         addToLog(operation);
@@ -214,8 +220,7 @@ public final class VcsOperationLog implements PersistentStateComponent<VcsOperat
       myAuthorized = authorized;
     }
 
-    @Nullable
-    private LinkedHashMap<ThrowableRunnable<VcsException>, Collection<VcsOperation>> mergeOperations()
+    private @Nullable LinkedHashMap<ThrowableRunnable<VcsException>, Collection<VcsOperation>> mergeOperations()
       throws VcsConnectionProblem {
 
       LinkedHashMap<ThrowableRunnable<VcsException>, Collection<VcsOperation>> result = new LinkedHashMap<>();
@@ -250,7 +255,7 @@ public final class VcsOperationLog implements PersistentStateComponent<VcsOperat
     }
 
     private void mergeRevert(LinkedHashMap<ThrowableRunnable<VcsException>, Collection<VcsOperation>> result,
-                             @NotNull final P4Connection connection,
+                             final @NotNull P4Connection connection,
                              final Collection<VcsOperation> operations) {
       if (operations.size() == 1) {
         handleNonMergeableOperation(result, operations.iterator().next());
@@ -273,8 +278,7 @@ public final class VcsOperationLog implements PersistentStateComponent<VcsOperat
       result.put(() -> operation.execute(myProject, myContext), Collections.singletonList(operation));
     }
 
-    @Nullable
-    private Set<P4Connection> ensureAuthorized(VcsOperation operation) throws VcsConnectionProblem {
+    private @Nullable Set<P4Connection> ensureAuthorized(VcsOperation operation) throws VcsConnectionProblem {
       Set<P4Connection> touchedConnections = new HashSet<>();
       for (String path : operation.getAffectedPaths()) {
         P4Connection connection = PerforceConnectionManager.getInstance(myProject).getConnectionForFile(new File(path));

@@ -46,13 +46,16 @@ class Angular2AliasedDirectiveProperty(
   override val virtualProperty: Boolean
     get() = delegate.virtualProperty
 
+  override val isSignalProperty: Boolean
+    get() = delegate.isSignalProperty
+
   override val apiStatus: WebSymbolApiStatus
     get() = delegate.apiStatus
 
   override val qualifiedKind: WebSymbolQualifiedKind
     get() = delegate.qualifiedKind
 
-  val originalName
+  val originalName: String
     get() = delegate.name
 
   override fun createPointer(): Pointer<out Angular2AliasedDirectiveProperty> {

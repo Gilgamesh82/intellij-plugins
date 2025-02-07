@@ -12,7 +12,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.util.parentOfTypes
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
-import com.intellij.webSymbols.findOffsetBySignature
+import com.intellij.webSymbols.testFramework.findOffsetBySignature
 import junit.framework.TestCase
 
 private const val PREFIX_INTERPOLATION = "{{ "
@@ -25,7 +25,7 @@ class VueTypeResolveTest : BasePlatformTestCase() {
     testVFor(Triple("el", "any,number | string", "number"),
              Triple("num", "number", "number"),
              Triple("str", "string", "number"),
-             Triple("obj", "any,number | string", "string | number"))
+             Triple("obj", "any,string | number", "string | number"))
   }
 
   fun testVForTS() {

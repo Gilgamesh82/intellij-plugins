@@ -1,3 +1,4 @@
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.lang.javascript.linter.tslint.execution;
 
 import com.intellij.codeInspection.util.InspectionMessage;
@@ -8,13 +9,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class TsLinterError extends JSLinterError {
-  @Nullable
-  private final String myPath;
-  private final int myEndLine;
-  private final int myEndColumn;
-
-  @Nullable
-  private final TsLintFixInfo myFixInfo;
+  private final @Nullable String myPath;
+  private final @Nullable TsLintFixInfo myFixInfo;
   private final boolean myIsGlobal;
 
   public TsLinterError(@Nullable String path,
@@ -26,10 +22,8 @@ public final class TsLinterError extends JSLinterError {
                        @Nullable String code,
                        boolean isWarning,
                        @Nullable TsLintFixInfo fixInfo) {
-    super(line, column, description, code, isWarning ? HighlightSeverity.WARNING : HighlightSeverity.ERROR);
+    super(line, column, endLine, endColumn, description, code, isWarning ? HighlightSeverity.WARNING : HighlightSeverity.ERROR);
     myPath = path;
-    myEndLine = endLine;
-    myEndColumn = endColumn;
     myFixInfo = fixInfo;
     myIsGlobal = false;
   }
@@ -37,22 +31,11 @@ public final class TsLinterError extends JSLinterError {
   private TsLinterError(final @NotNull @InspectionMessage String description) {
     super(1, 1, description, null);
     myPath = null;
-    myEndLine = 1;
-    myEndColumn = 1;
     myFixInfo = null;
     myIsGlobal = true;
   }
 
-  public int getEndLine() {
-    return myEndLine;
-  }
-
-  public int getEndColumn() {
-    return myEndColumn;
-  }
-
-  @Nullable
-  public String getAbsoluteFilePath() {
+  public @Nullable String getAbsoluteFilePath() {
     return myPath;
   }
 
@@ -60,8 +43,7 @@ public final class TsLinterError extends JSLinterError {
     return myFixInfo != null;
   }
 
-  @Nullable
-  public TsLintFixInfo getFixInfo() {
+  public @Nullable TsLintFixInfo getFixInfo() {
     return myFixInfo;
   }
 
@@ -75,8 +57,8 @@ public final class TsLinterError extends JSLinterError {
            "myDescription='" + myDescription + '\'' +
            ", myCode='" + myCode + '\'' +
            ", myPath='" + myPath + '\'' +
-           ", myEndLine=" + myEndLine +
-           ", myEndColumn=" + myEndColumn +
+           ", myEndLine=" + getEndLine() +
+           ", myEndColumn=" + getEndColumn() +
            ", myFixInfo=" + myFixInfo +
            ", myIsGlobal=" + myIsGlobal +
            '}';

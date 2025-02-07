@@ -8,9 +8,8 @@ import com.intellij.execution.process.ProcessAdapter;
 import com.intellij.execution.process.ProcessEvent;
 import com.intellij.execution.process.ProcessOutputTypes;
 import com.intellij.execution.ui.ConsoleViewContentType;
-import com.intellij.javascript.nodejs.NodePackageVersion;
-import com.intellij.javascript.nodejs.NodePackageVersionUtil;
 import com.intellij.javascript.nodejs.interpreter.local.NodeJsLocalInterpreter;
+import com.intellij.javascript.nodejs.util.NodePackage;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.DefaultProjectFactory;
@@ -65,8 +64,7 @@ public class YeomanRunGeneratorForm implements Disposable {
   }
 
 
-  @Nullable
-  private YeomanInstalledGeneratorInfo myInfo;
+  private @Nullable YeomanInstalledGeneratorInfo myInfo;
   private final String myDirectoryForCreate;
   private final EventHandler myGlobalEventHandler;
   private JScrollPane myScrollPane;
@@ -152,7 +150,7 @@ public class YeomanRunGeneratorForm implements Disposable {
         }
 
         @Override
-        public void processTerminated(@NotNull final ProcessEvent event) {
+        public void processTerminated(final @NotNull ProcessEvent event) {
           UIUtil.invokeLaterIfNeeded(() -> {
             done();
 
@@ -244,16 +242,14 @@ public class YeomanRunGeneratorForm implements Disposable {
 
   private void addNewYoVersionParameter(@NotNull GeneralCommandLine line) {
     assert myInfo != null;
-    NodePackageVersion version = NodePackageVersionUtil.getPackageVersion(myInfo.getFilePath());
-
-    SemVer ver = version == null ? null : version.getSemVer();
+    NodePackage pkg = new NodePackage(myInfo.getFilePath());
+    SemVer ver = pkg.getVersion(myProject);
     if (ver == null || ver.isGreaterOrEqualThan(1, 7, 1)) {
       line.addParameter("--newYoVersion");
     }
   }
 
-  @NotNull
-  private JTextField createGeneratorNameField() {
+  private @NotNull JTextField createGeneratorNameField() {
     final JTextField field = new JTextField();
     if (myInfo != null) {
       field.setText(myInfo.getYoName());
@@ -262,8 +258,7 @@ public class YeomanRunGeneratorForm implements Disposable {
     return field;
   }
 
-  @NotNull
-  public JScrollPane getHolderPanel() {
+  public @NotNull JScrollPane getHolderPanel() {
     return myScrollPane;
   }
 
@@ -294,8 +289,7 @@ public class YeomanRunGeneratorForm implements Disposable {
     myScrollPane.setViewportView(new JPanel(new BorderLayout()));
   }
 
-  @NotNull
-  public JComponent getMainPanel() {
+  public @NotNull JComponent getMainPanel() {
     return myMainPanel;
   }
 
@@ -303,7 +297,7 @@ public class YeomanRunGeneratorForm implements Disposable {
   public void dispose() {
     if (myProcessHandler != null) {
       if (!myProcessHandler.isProcessTerminated() && !myProcessHandler.isProcessTerminating()) {
-        LOGGER.debug("Dispose process " + myProcessHandler.getCommandLine());
+        LOGGER.debug("Dispose process " + myProcessHandler.getCommandLineForLog());
 
         myProcessHandler.destroyProcess();
         //process doesn't completed -> should remove folder

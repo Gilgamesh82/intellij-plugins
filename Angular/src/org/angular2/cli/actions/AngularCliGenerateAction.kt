@@ -213,11 +213,12 @@ class AngularCliGenerateAction : DumbAwareAction() {
     val module = modules.firstOrNull() ?: return
 
     val filter = AngularCliFilter(project, cli.path)
+    val title = checkNotNull(schematic.name)
     NpmPackageProjectGenerator.generate(interpreter, NodePackage(module.virtualFile?.path!!),
-                                        Function { pkg -> pkg.findBinFile("ng", null)?.absolutePath },
+                                        Function { pkg -> pkg.findBinFilePath("ng")?.toString() },
                                         cli, VfsUtilCore.virtualToIoFile(workingDir ?: cli), project,
                                         null, JavaScriptBundle.message("generating.0", cli.name),
-                                        arrayOf(filter), "generate", schematic.name, *arguments)
+                                        arrayOf(filter), "generate", title, *arguments)
   }
 
   override fun update(e: AnActionEvent) {
@@ -229,5 +230,5 @@ class AngularCliGenerateAction : DumbAwareAction() {
                                          && AngularCliUtil.findAngularCliFolder(project, file) != null
   }
 
-  override fun getActionUpdateThread() = ActionUpdateThread.BGT
+  override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 }

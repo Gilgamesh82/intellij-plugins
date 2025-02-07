@@ -1,0 +1,42 @@
+### auto-generated section `build intellij.javascript.debugger.featuresTrainer` start
+load("@rules_jvm//:jvm.bzl", "jvm_library", "jvm_provided_library", "jvm_resources")
+
+jvm_resources(
+  name = "javascript-debugger-featuresTrainer_resources",
+  files = glob(["resources/**/*"]),
+  strip_prefix = "resources"
+)
+
+jvm_provided_library(
+  name = "javascript-impl_provided",
+  lib = "//plugins/JavaScriptLanguage:javascript-impl"
+)
+
+jvm_provided_library(
+  name = "javascript-debugger_provided",
+  lib = "//plugins/JavaScriptDebugger:javascript-debugger"
+)
+
+jvm_library(
+  name = "javascript-debugger-featuresTrainer",
+  module_name = "intellij.javascript.debugger.featuresTrainer",
+  visibility = ["//visibility:public"],
+  srcs = glob(["src/**/*.kt", "src/**/*.java"], allow_empty = True),
+  deps = [
+    "@lib//:kotlin-stdlib",
+    "//plugins/JavaScriptLanguage/javascript-parser",
+    "@community//platform/testRunner",
+    "@community//platform/smRunner",
+    "@community//plugins/ide-features-trainer:featuresTrainer",
+    "@community//platform/platform-impl:ide-impl",
+    "@community//platform/editor-ui-ex:editor-ex",
+    "@community//platform/xdebugger-api:debugger",
+    "@community//platform/core-ui",
+    "//plugins/JavaScriptLanguage/javascript-frontback-impl",
+    "//plugins/JavaScriptLanguage/javascript-psi-impl",
+    ":javascript-impl_provided",
+    ":javascript-debugger_provided",
+  ],
+  runtime_deps = [":javascript-debugger-featuresTrainer_resources"]
+)
+### auto-generated section `build intellij.javascript.debugger.featuresTrainer` end

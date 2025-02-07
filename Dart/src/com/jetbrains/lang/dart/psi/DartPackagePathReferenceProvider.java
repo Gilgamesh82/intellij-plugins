@@ -1,4 +1,4 @@
-// Copyright 2000-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.jetbrains.lang.dart.psi;
 
 import com.intellij.openapi.util.TextRange;
@@ -18,14 +18,11 @@ import com.jetbrains.lang.dart.util.PubspecYamlUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import static com.jetbrains.lang.dart.util.DartUrlResolver.PACKAGES_FOLDER_NAME;
-
 /**
  * Resolves path in {@code <script src="packages/browser/dart.js"/>} to base Dart {@code packages} folder because relative symlinked {@code packages} folder is excluded.<br/>
  * Another example: {@code <link rel="import" href="packages/click_counter/click_counter.html">} is resolved to ./lib/click_counter.html if 'click_counter' is a Dart project name in pubspec.yaml
  */
-public class DartPackagePathReferenceProvider extends PsiReferenceProvider {
-
+public final class DartPackagePathReferenceProvider extends PsiReferenceProvider {
   public static ElementFilter getFilter() {
     return new ElementFilter() {
       @Override
@@ -50,7 +47,7 @@ public class DartPackagePathReferenceProvider extends PsiReferenceProvider {
     };
   }
 
-  private static boolean canContainDartPackageReference(@Nullable final String tagName, @Nullable final String attrName) {
+  private static boolean canContainDartPackageReference(final @Nullable String tagName, final @Nullable String attrName) {
     return ("link".equalsIgnoreCase(tagName) && "href".equalsIgnoreCase(attrName)) ||
            ("script".equalsIgnoreCase(tagName) && "src".equalsIgnoreCase(attrName)) ||
            ("img".equalsIgnoreCase(tagName) && "src".equalsIgnoreCase(attrName));
@@ -76,12 +73,12 @@ public class DartPackagePathReferenceProvider extends PsiReferenceProvider {
     return getDartPackageReferences(psiElement, DartUrlResolver.getInstance(psiElement.getProject(), file));
   }
 
-  private static FileReference[] getDartPackageReferences(@NotNull final PsiElement psiElement,
-                                                          @NotNull final DartUrlResolver dartResolver) {
+  private static FileReference[] getDartPackageReferences(final @NotNull PsiElement psiElement,
+                                                          final @NotNull DartUrlResolver dartResolver) {
     final TextRange textRange = ElementManipulators.getValueTextRange(psiElement);
     final String referenceText = textRange.substring(psiElement.getText());
 
-    if (!referenceText.trim().startsWith(PACKAGES_FOLDER_NAME + "/") && !referenceText.contains("/" + PACKAGES_FOLDER_NAME + "/")) {
+    if (!referenceText.trim().startsWith(DartUrlResolver.PACKAGES_FOLDER_NAME + "/") && !referenceText.contains("/" + DartUrlResolver.PACKAGES_FOLDER_NAME + "/")) {
       return FileReference.EMPTY;
     }
 

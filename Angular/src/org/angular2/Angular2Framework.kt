@@ -13,15 +13,15 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.xml.XmlTag
 import com.intellij.webSymbols.WebSymbolQualifiedName
 import com.intellij.webSymbols.query.WebSymbolNamesProvider
+import com.intellij.webSymbols.query.WebSymbolNamesProvider.Target.NAMES_QUERY
+import com.intellij.webSymbols.query.WebSymbolNamesProvider.Target.RENAME_QUERY
 import icons.AngularIcons
 import org.angular2.codeInsight.attributes.Angular2AttributeDescriptor
 import org.angular2.codeInsight.tags.Angular2ElementDescriptor
 import org.angular2.lang.Angular2LangUtil
-import org.angular2.lang.html.Angular17HtmlFileType
-import org.angular2.lang.html.Angular2HtmlDialect
-import org.angular2.lang.html.Angular2HtmlFileType
-import org.angular2.lang.html.Angular2TemplateSyntax
+import org.angular2.lang.html.*
 import org.angular2.lang.svg.Angular17SvgFileType
+import org.angular2.lang.svg.Angular181SvgFileType
 import org.angular2.lang.svg.Angular2SvgFileType
 import org.angular2.web.Angular2AttributeNameCodeCompletionFilter
 import org.angular2.web.NG_DIRECTIVE_IN_OUTS
@@ -40,10 +40,12 @@ class Angular2Framework : WebFramework() {
       SourceFileKind.HTML -> when (Angular2LangUtil.getTemplateSyntax(project, context)) {
         Angular2TemplateSyntax.V_2, Angular2TemplateSyntax.V_2_NO_EXPANSION_FORMS -> Angular2HtmlFileType
         Angular2TemplateSyntax.V_17 -> Angular17HtmlFileType
+        Angular2TemplateSyntax.V_18_1 -> Angular181HtmlFileType
       }
       SourceFileKind.SVG -> when (Angular2LangUtil.getTemplateSyntax(project, context)) {
         Angular2TemplateSyntax.V_2, Angular2TemplateSyntax.V_2_NO_EXPANSION_FORMS -> Angular2SvgFileType
         Angular2TemplateSyntax.V_17 -> Angular17SvgFileType
+        Angular2TemplateSyntax.V_18_1 -> Angular181SvgFileType
       }
       else -> null
     }
@@ -51,20 +53,26 @@ class Angular2Framework : WebFramework() {
   override fun isOwnTemplateLanguage(language: Language): Boolean =
     language is Angular2HtmlDialect
 
-  override fun createHtmlAttributeDescriptor(info: WebSymbolHtmlAttributeInfo,
-                                             tag: XmlTag?): WebSymbolAttributeDescriptor =
+  override fun createHtmlAttributeDescriptor(
+    info: WebSymbolHtmlAttributeInfo,
+    tag: XmlTag?,
+  ): WebSymbolAttributeDescriptor =
     Angular2AttributeDescriptor(info, tag)
 
-  override fun createHtmlElementDescriptor(info: WebSymbolHtmlElementInfo,
-                                           tag: XmlTag): WebSymbolElementDescriptor =
+  override fun createHtmlElementDescriptor(
+    info: WebSymbolHtmlElementInfo,
+    tag: XmlTag,
+  ): WebSymbolElementDescriptor =
     Angular2ElementDescriptor(info, tag)
 
-  override fun getAttributeNameCodeCompletionFilter(tag: XmlTag) =
+  override fun getAttributeNameCodeCompletionFilter(tag: XmlTag): Angular2AttributeNameCodeCompletionFilter =
     Angular2AttributeNameCodeCompletionFilter(tag)
 
-  override fun getNames(qualifiedName: WebSymbolQualifiedName,
-                        target: WebSymbolNamesProvider.Target): List<String> {
-    if (target == WebSymbolNamesProvider.Target.NAMES_QUERY
+  override fun getNames(
+    qualifiedName: WebSymbolQualifiedName,
+    target: WebSymbolNamesProvider.Target,
+  ): List<String> {
+    if ((target == NAMES_QUERY || target == RENAME_QUERY)
         && qualifiedName.qualifiedKind == NG_DIRECTIVE_IN_OUTS) {
       // Required to find usages and rename for model signal
       return listOf(
@@ -77,7 +85,7 @@ class Angular2Framework : WebFramework() {
 
   companion object {
 
-    const val ID = "angular"
+    const val ID: String = "angular"
 
   }
 }

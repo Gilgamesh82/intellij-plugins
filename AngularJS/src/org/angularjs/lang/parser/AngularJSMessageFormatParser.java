@@ -1,9 +1,10 @@
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.angularjs.lang.parser;
 
 import com.intellij.lang.PsiBuilder;
 import com.intellij.lang.javascript.JSElementTypes;
 import com.intellij.lang.javascript.JSTokenTypes;
-import com.intellij.lang.javascript.JavaScriptBundle;
+import com.intellij.lang.javascript.JavaScriptCoreBundle;
 import com.intellij.lang.javascript.parsing.ExpressionParser;
 import com.intellij.psi.tree.IElementType;
 import org.angularjs.codeInsight.AngularJSPluralCategories;
@@ -17,7 +18,7 @@ import java.util.Set;
 import static org.angularjs.AngularJSBundle.message;
 
 public class AngularJSMessageFormatParser extends ExpressionParser<AngularJSParser> {
-  @NonNls public static final String OFFSET_OPTION = "offset";
+  public static final @NonNls String OFFSET_OPTION = "offset";
   private boolean myInsideSelectExpression = false;
 
   public AngularJSMessageFormatParser(@NotNull AngularJSParser parser) {
@@ -35,7 +36,7 @@ public class AngularJSMessageFormatParser extends ExpressionParser<AngularJSPars
     //if (!myJavaScriptParser.getExpressionParser().parseQualifiedTypeName()) {
     myInsideSelectExpression = true;
     try {
-      if (!myJavaScriptParser.getExpressionParser().parseUnaryExpression()) {
+      if (!parser.getExpressionParser().parseUnaryExpression()) {
         return rollback(expr);
       }
     }
@@ -82,7 +83,7 @@ public class AngularJSMessageFormatParser extends ExpressionParser<AngularJSPars
           if (JSTokenTypes.LBRACE == builder.lookAhead(1)) {
             builder.advanceLexer();
             builder.advanceLexer();
-            myJavaScriptParser.getExpressionParser().parseExpression();
+            parser.getExpressionParser().parseExpression();
             if (!expectDoubleRBrace(true)) {
               mark.drop();
               return false;
@@ -135,7 +136,7 @@ public class AngularJSMessageFormatParser extends ExpressionParser<AngularJSPars
     if (isIdentifierToken(builder.getTokenType()) && OFFSET_OPTION.equals(builder.getTokenText())) {
       if (builder.lookAhead(1) != JSTokenTypes.COLON) {
         builder.advanceLexer();
-        builder.error(JavaScriptBundle.message("javascript.parser.message.expected.colon"));
+        builder.error(JavaScriptCoreBundle.message("javascript.parser.message.expected.colon"));
         return false;
       }
       final IElementType value = builder.lookAhead(2);

@@ -9,6 +9,7 @@ import com.intellij.openapi.vcs.AbstractFilterChildren;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.idea.perforce.application.PerforceVcs;
 
@@ -76,11 +77,11 @@ public class P4ConnectionCalculator {
     myMultipleConnections = new PerforceMultipleConnections(p4ConfigFileName, defaultParameters, connectionSettings, configsMap);
   }
 
-  @NotNull
-  public PerforceMultipleConnections getMultipleConnections() {
+  public @NotNull PerforceMultipleConnections getMultipleConnections() {
     return myMultipleConnections;
   }
 
+  @Contract(mutates = "param2")
   private static void filterSimilarConfigFiles(final Map<VirtualFile, P4ConnectionParameters> connectionSettings,
                                                List<VirtualFile> detailedVcsMappings) {
     final AbstractFilterChildren<VirtualFile> filter = new AbstractFilterChildren<>() {

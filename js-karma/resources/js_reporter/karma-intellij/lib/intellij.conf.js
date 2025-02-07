@@ -68,14 +68,34 @@ function disableSingleRun(config) {
   }
 }
 
-module.exports = function (config) {
+function tryRequireFromProjectRoot(modulePath) {
+  try {
+    const projectRoot = process.cwd();
+    const pathSep = require('path').sep;
+    // `module.createRequire` needs an absolute path with trailing slash
+    const projectRootRequire = require('module').createRequire(projectRoot.endsWith(pathSep) ? projectRoot : projectRoot + pathSep);
+    return projectRootRequire(modulePath);
+  } catch {
+    return null;
+  }
+}
+
+module.exports = async function (config) {
   if (originalConfigPath) {
+    // support for karma.conf.ts when ts-node is available
+    // https://github.com/karma-runner/karma/blob/v6.4.4/lib/config.js#L431-L434
+    if (require('path').extname(originalConfigPath) === '.ts') {
+      const tsNode = tryRequireFromProjectRoot('ts-node');
+      if (tsNode != null) {
+        tsNode.register();
+      }
+    }
     var originalConfigModule = require(originalConfigPath);
     // https://github.com/karma-runner/karma/blob/v1.7.0/lib/config.js#L364
     if (typeof originalConfigModule === 'object' && typeof originalConfigModule.default !== 'undefined') {
       originalConfigModule = originalConfigModule.default;
     }
-    originalConfigModule(config);
+    await originalConfigModule(config);
   }
   else {
     require('./ng-template').getBuiltInKarmaConfig(config);

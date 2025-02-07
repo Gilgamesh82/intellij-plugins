@@ -72,8 +72,8 @@ public class PerforceChangeProvider implements ChangeProvider {
   }
 
   @Override
-  public void getChanges(@NotNull final VcsDirtyScope dirtyScope, @NotNull final ChangelistBuilder builder, @NotNull final ProgressIndicator progress,
-                         @NotNull final ChangeListManagerGate addGate) throws VcsException {
+  public void getChanges(final @NotNull VcsDirtyScope dirtyScope, final @NotNull ChangelistBuilder builder, final @NotNull ProgressIndicator progress,
+                         final @NotNull ChangeListManagerGate addGate) throws VcsException {
     Stopwatch sw = Stopwatch.createStarted();
     try (AccessToken ignored = myVcs.readLockP4()) {
       doGetChanges(dirtyScope, builder, progress, addGate);
@@ -96,7 +96,7 @@ public class PerforceChangeProvider implements ChangeProvider {
     MultiMap<ConnectionKey, PerforceChangeList> allLists = calcChangeListMap(changeCache);
     PerforceSettings settings = PerforceSettings.getSettings(myProject);
     HashSet<String> ideaLists = new HashSet<>();
-    refreshSynchronizer(addGate, allLists, ideaLists);
+    refreshSynchronizer(settings, addGate, allLists, ideaLists);
     if (settings.FORCE_SYNC_CHANGELISTS) {
       removeUnsyncedIdeaChangelists(addGate, ideaLists);
     }
@@ -289,11 +289,12 @@ public class PerforceChangeProvider implements ChangeProvider {
     }
   }
 
-  private void refreshSynchronizer(final ChangeListManagerGate addGate, final MultiMap<ConnectionKey, PerforceChangeList> allLists, Set<String> ideaLists) {
+  private void refreshSynchronizer(final PerforceSettings settings, final ChangeListManagerGate addGate, final MultiMap<ConnectionKey, PerforceChangeList> allLists, Set<String> ideaLists) {
     for (final ConnectionKey key : allLists.keySet()) {
       Collection<PerforceChangeList> lists = allLists.get(key);
       Set<String> disappearedLists = mySynchronizer.acceptInfo(key, lists, addGate, ideaLists);
-      tryRestoreDefaultChangelist(addGate, disappearedLists);
+      if (settings.FORCE_SYNC_CHANGELISTS)
+        tryRestoreDefaultChangelist(addGate, disappearedLists);
 
       addGate.setListsToDisappear(disappearedLists);
     }
@@ -312,7 +313,7 @@ public class PerforceChangeProvider implements ChangeProvider {
     }
   }
 
-  private void processConnection(@NotNull final P4Connection connection,
+  private void processConnection(final @NotNull P4Connection connection,
                                  final ChangelistBuilder builder,
                                  final Collection<VirtualFile> roots,
                                  final ProgressIndicator progress,
@@ -357,20 +358,25 @@ public class PerforceChangeProvider implements ChangeProvider {
     myReadOnlyFileStateManager.processFocusLost();
   }
 
-  private List<PerforceChange> getChangesUnder(final P4Connection connection, @NotNull final VirtualFile root,
-                                               final VcsDirtyScope dirtyScope,
-                                                     final Collection<PerforceChangeList> allLists, PerforceChangeCache changeCache) throws VcsException {
+  private @NotNull List<PerforceChange> getChangesUnder(@NotNull P4Connection connection,
+                                                        @NotNull VirtualFile root,
+                                                        @NotNull VcsDirtyScope dirtyScope,
+                                                        @NotNull Collection<PerforceChangeList> allLists,
+                                                        @NotNull PerforceChangeCache changeCache) throws VcsException {
 
-    final List<PerforceChange> perforceChanges = new ArrayList<>();
+    List<PerforceChange> perforceChanges = new ArrayList<>();
 
     List<PerforceChange> defChanges = filterByRoot(root, dirtyScope, changeCache.getChanges(connection, -1, root));
     if (!defChanges.isEmpty()) {
-      myRunner.setChangeRevisionsFromHave(connection, defChanges);
       perforceChanges.addAll(defChanges);
     }
 
     for (PerforceChangeList changeList : allLists) {
       perforceChanges.addAll(filterByRoot(root, dirtyScope, changeCache.getChanges(connection, changeList.getNumber(), root)));
+    }
+
+    if (!perforceChanges.isEmpty()) {
+      myRunner.setChangeRevisions(P4Command.opened, connection, defChanges);
     }
 
     return perforceChanges;

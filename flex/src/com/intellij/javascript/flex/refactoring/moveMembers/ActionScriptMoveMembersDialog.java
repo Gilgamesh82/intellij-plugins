@@ -4,8 +4,8 @@ package com.intellij.javascript.flex.refactoring.moveMembers;
 import com.intellij.ide.util.PlatformPackageUtil;
 import com.intellij.javascript.flex.resolve.FlexResolveHelper;
 import com.intellij.lang.javascript.JavaScriptBundle;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lang.javascript.dialects.JSDialectSpecificHandlersFactory;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.psi.JSElement;
 import com.intellij.lang.javascript.psi.ecmal4.JSAttributeListOwner;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
@@ -41,11 +41,13 @@ import com.intellij.refactoring.ui.RefactoringDialog;
 import com.intellij.refactoring.util.CommonRefactoringUtil;
 import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.ScrollPaneFactory;
+import com.intellij.ui.components.JBBox;
 import com.intellij.usageView.UsageViewUtil;
 import com.intellij.util.ThreeState;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -58,7 +60,7 @@ public class ActionScriptMoveMembersDialog extends RefactoringDialog implements 
   private static final @NonNls String RECENTS_KEY = "JSMoveMembersDialog.RECENTS_KEY";
   private final JSClass mySourceClass;
   private final String mySourceClassName;
-  private final List<JSMemberInfo> myMemberInfos = new ArrayList<>();
+  private final @Unmodifiable List<JSMemberInfo> myMemberInfos;
   private final JSReferenceEditor myTfTargetClassName;
   private JSMemberSelectionTable myTable;
   private final MoveCallback myMoveCallback;
@@ -78,11 +80,12 @@ public class ActionScriptMoveMembersDialog extends RefactoringDialog implements 
 
     mySourceClassName = mySourceClass.getQualifiedName();
 
-    JSMemberInfo.extractStaticMembers(sourceClass, myMemberInfos, new JSMemberInfo.EmptyFilter<JSAttributeListOwner>());
-    for (JSMemberInfo memberInfo : myMemberInfos) {
+    List<JSMemberInfo> infos = new ArrayList<>();
+    JSMemberInfo.extractStaticMembers(sourceClass, infos, new JSMemberInfo.EmptyFilter<JSAttributeListOwner>());
+    for (JSMemberInfo memberInfo : infos) {
       memberInfo.setChecked(preselectMembers);
     }
-    JSMemberInfo.sortByOffset(myMemberInfos);
+    myMemberInfos = JSMemberInfo.sortByOffset(infos);
 
     String fqName = initialTargetClass != null && !sourceClass.equals(initialTargetClass) ? initialTargetClass.getQualifiedName() : "";
     myTfTargetClassName = createTargetClassField(project, fqName, getScope(), mySourceClass.getContainingFile());
@@ -132,7 +135,7 @@ public class ActionScriptMoveMembersDialog extends RefactoringDialog implements 
     JPanel panel = new JPanel(new BorderLayout());
 
     JPanel _panel;
-    Box box = Box.createVerticalBox();
+    JBBox box = JBBox.createVerticalBox();
 
     _panel = new JPanel(new BorderLayout());
     JTextField sourceClassField = new JTextField();
@@ -213,7 +216,7 @@ public class ActionScriptMoveMembersDialog extends RefactoringDialog implements 
     String message = validateInputData();
 
     if (message != null) {
-      if (message.length() != 0) {
+      if (!message.isEmpty()) {
         CommonRefactoringUtil
           .showErrorMessage(StringUtil.capitalizeWords(JavaScriptBundle.message("move.members.refactoring.name"), true), message, null, myProject);
       }
@@ -289,7 +292,7 @@ public class ActionScriptMoveMembersDialog extends RefactoringDialog implements 
     final String packageName = StringUtil.getPackageName(fqName);
 
     final GlobalSearchScope scope = getScope();
-    final JSClassResolver resolver = JSDialectSpecificHandlersFactory.forLanguage(JavaScriptSupportLoader.ECMA_SCRIPT_L4).getClassResolver();
+    final JSClassResolver resolver = JSDialectSpecificHandlersFactory.forLanguage(FlexSupportLoader.ECMA_SCRIPT_L4).getClassResolver();
     PsiElement aClass = resolver.findClassByQName(fqName, scope);
     if (aClass instanceof JSClass) return (JSClass)aClass;
 

@@ -1,0 +1,44 @@
+### auto-generated section `build intellij.tsr` start
+load("@rules_jvm//:jvm.bzl", "jvm_library", "jvm_resources", "jvm_test")
+
+jvm_resources(
+  name = "tsr_resources",
+  files = glob(["resources/**/*"]),
+  strip_prefix = "resources"
+)
+
+jvm_library(
+  name = "tsr",
+  module_name = "intellij.tsr",
+  visibility = ["//visibility:public"],
+  srcs = glob(["gen/**/*.kt", "gen/**/*.java", "src/**/*.kt", "src/**/*.java"], allow_empty = True),
+  deps = [
+    "@community//platform/analysis-api:analysis",
+    "@community//platform/core-api:core",
+    "@community//platform/platform-api:ide",
+    "@community//platform/lang-impl",
+    "@community//platform/platform-impl:ide-impl",
+    "@community//platform/code-style-impl:codeStyle-impl",
+  ],
+  runtime_deps = [":tsr_resources"]
+)
+
+jvm_test(
+  name = "tsr_test",
+  srcs = glob(["test/**/*.kt", "test/**/*.java"], allow_empty = True),
+  associates = [":tsr"],
+  deps = [
+    "@community//platform/analysis-api:analysis",
+    "@community//platform/core-api:core",
+    "@community//java/testFramework",
+    "@community//platform/platform-api:ide",
+    "@community//platform/lang-impl",
+    "@community//platform/platform-impl:ide-impl",
+    "@community//platform/platform-impl:ide-impl_test_lib",
+    "@community//platform/testFramework",
+    "@community//platform/testFramework:testFramework_test_lib",
+    "@community//platform/code-style-impl:codeStyle-impl",
+  ],
+  runtime_deps = [":tsr_resources"]
+)
+### auto-generated section `build intellij.tsr` end

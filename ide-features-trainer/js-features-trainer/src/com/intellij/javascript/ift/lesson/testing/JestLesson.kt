@@ -25,7 +25,7 @@ import java.awt.event.KeyEvent
 import javax.swing.SwingConstants
 import javax.swing.tree.DefaultMutableTreeNode
 
-class JestLesson
+internal class JestLesson
   : KLesson("Fundamentals of Testing in WebStorm", JsLessonsBundle.message("js.testing.jest.title", productName)){
   override val lessonContent: LessonContext.() -> Unit
     get() {
@@ -55,7 +55,7 @@ class JestLesson
           }
         }
 
-        task("editRunConfigurations") {
+        task {
           val editConfiguration = strong(ActionsBundle.message("group.RunMenu.text").dropMnemonic() + 
                                          " > " + 
                                          ExecutionBundle.message("edit.configuration.action").dropMnemonic())

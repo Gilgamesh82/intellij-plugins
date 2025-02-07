@@ -9,8 +9,8 @@ import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.util.text.StringUtilRt
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiDocumentManager
-import org.angular2.lang.html.tcb.Angular2TranspiledComponentFileBuilder
-import org.angular2.lang.html.tcb.Angular2TranspiledComponentFileBuilder.TranspiledComponentFile
+import org.angular2.lang.expr.service.tcb.Angular2TranspiledDirectiveFileBuilder
+import org.angular2.lang.expr.service.tcb.Angular2TranspiledDirectiveFileBuilder.TranspiledDirectiveFile
 import java.util.*
 
 class Angular2TranspiledTemplateRequestArgs private constructor(
@@ -36,6 +36,7 @@ class Angular2TranspiledTemplateRequestArgs private constructor(
   }
 }
 
+@Suppress("unused")
 class Angular2TcbMappingInfo(
   @JvmField val fileName: String, /* source file name */
   @JvmField val sourceOffsets: List<Int>,
@@ -44,10 +45,10 @@ class Angular2TcbMappingInfo(
   @JvmField val generatedLengths: List<Int>,
   @JvmField val diagnosticsOffsets: List<Int>,
   @JvmField val diagnosticsLengths: List<Int>,
-  @JvmField val types: List<Int>,
+  @JvmField val flags: List<Int>,
 )
 
-internal fun TranspiledComponentFile.toAngular2TranspiledTemplateRequestArgs(project: Project, virtualFile: VirtualFile): Angular2TranspiledTemplateRequestArgs {
+internal fun TranspiledDirectiveFile.toAngular2TranspiledTemplateRequestArgs(project: Project, virtualFile: VirtualFile): Angular2TranspiledTemplateRequestArgs {
 
   val psiDocumentManager = PsiDocumentManager.getInstance(project)
   val fileDocumentManager = FileDocumentManager.getInstance()
@@ -73,7 +74,7 @@ internal fun TranspiledComponentFile.toAngular2TranspiledTemplateRequestArgs(pro
 
   val componentFileLineSeparator = fileDocumentManager.getLineSeparator(virtualFile, project)
   val (generatedCode, generatedMappingsOffsets) = if (componentFileLineSeparator.length > 1)
-    // The generated code needs to have line endings similar to what we send to TS server without transpilation
+  // The generated code needs to have line endings similar to what we send to TS server without transpilation
     StringUtilRt.convertLineSeparators(this.generatedCode, componentFileLineSeparator).let {
       Pair(it, buildCodeMappingOffsets(it))
     }
@@ -92,7 +93,7 @@ internal fun TranspiledComponentFile.toAngular2TranspiledTemplateRequestArgs(pro
   )
 }
 
-private fun Angular2TranspiledComponentFileBuilder.FileMappings.toCodeMapping(
+private fun Angular2TranspiledDirectiveFileBuilder.FileMappings.toCodeMapping(
   sourceMappingOffsets: NavigableMap<Int, Int>?,
   generatedMappingOffsets: NavigableMap<Int, Int>?,
 ): Angular2TcbMappingInfo {
@@ -103,9 +104,9 @@ private fun Angular2TranspiledComponentFileBuilder.FileMappings.toCodeMapping(
     sourceLengths = mappings.map { it.sourceLength.translateLength(it.sourceOffset, sourceMappingOffsets) },
     generatedOffsets = mappings.map { it.generatedOffset.translate(generatedMappingOffsets) },
     generatedLengths = mappings.map { it.generatedLength.translateLength(it.generatedOffset, generatedMappingOffsets) },
-    diagnosticsOffsets = mappings.map { it.diagnosticsOffset?.let { it.translate(sourceMappingOffsets) } ?: -1 },
+    diagnosticsOffsets = mappings.map { it.diagnosticsOffset?.translate(sourceMappingOffsets) ?: -1 },
     diagnosticsLengths = mappings.map { it.diagnosticsLength?.translateLength(it.diagnosticsOffset ?: 0, sourceMappingOffsets) ?: -1 },
-    types = mappings.map { if (it.types) 1 else 0 }
+    flags = mappings.map { it.flags.sumOf { flag -> 1 shl flag.ordinal } },
   )
 }
 

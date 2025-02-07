@@ -14,7 +14,6 @@ import com.intellij.lang.ImportOptimizer;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.lang.injection.InjectedLanguageManager;
 import com.intellij.lang.javascript.JavaScriptBundle;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lang.javascript.inspections.JSUnusedLocalSymbolsInspection;
 import com.intellij.lang.javascript.psi.JSElement;
 import com.intellij.lang.javascript.psi.JSExpressionCodeFragment;
@@ -50,13 +49,13 @@ final class ActionScriptUnusedImportsPassFactory implements TextEditorHighlighti
   }
 
   @Override
-  public TextEditorHighlightingPass createHighlightingPass(final @NotNull PsiFile file, final @NotNull Editor editor) {
-    if (file instanceof XmlFile && JavaScriptSupportLoader.isFlexMxmFile(file) ||
-        file instanceof JSFile && !(file instanceof PsiCompiledElement) && file.getLanguage().is(JavaScriptSupportLoader.ECMA_SCRIPT_L4)
+  public TextEditorHighlightingPass createHighlightingPass(final @NotNull PsiFile psiFile, final @NotNull Editor editor) {
+    if (psiFile instanceof XmlFile && FlexSupportLoader.isFlexMxmFile(psiFile) ||
+        psiFile instanceof JSFile && !(psiFile instanceof PsiCompiledElement) && psiFile.getLanguage().is(FlexSupportLoader.ECMA_SCRIPT_L4)
        ) {
       final HighlightDisplayKey key = HighlightDisplayKey.find(JSUnusedLocalSymbolsInspection.SHORT_NAME);
-      if (InspectionProjectProfileManager.getInstance(file.getProject()).getCurrentProfile().isToolEnabled(key, file)) {
-        return new ActionScriptUnusedImportsHighlightingPass(file, editor);
+      if (InspectionProjectProfileManager.getInstance(psiFile.getProject()).getCurrentProfile().isToolEnabled(key, psiFile)) {
+        return new ActionScriptUnusedImportsHighlightingPass(psiFile, editor);
       }
     }
     return null;

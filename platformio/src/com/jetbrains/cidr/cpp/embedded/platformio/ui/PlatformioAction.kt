@@ -2,6 +2,7 @@ package com.jetbrains.cidr.cpp.embedded.platformio.ui
 
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.components.service
 import com.intellij.openapi.util.NlsSafe
 import com.jetbrains.cidr.cpp.embedded.platformio.ClionEmbeddedPlatformioBundle
@@ -24,7 +25,7 @@ abstract class PlatformioAction(text: () -> @Nls String,
 class PlatformioMonitorAction : PlatformioAction({ ClionEmbeddedPlatformioBundle.message("task.monitor") }, { "pio device monitor" },
                                                  pioIcon(AllIcons.Nodes.Console)) {
   override fun actionPerformed(e: AnActionEvent) =
-    actionPerformed(e, false, true, false, "device", "monitor")
+    actionPerformedKillAlreadyRunning(e, false, true, false, "device", "monitor")
 }
 
 class PlatformioPkgUpdateAction : PlatformioAction({ ClionEmbeddedPlatformioBundle.message("platformio.update") }, { "pio pkg update" },
@@ -45,7 +46,9 @@ open class PlatformioTargetAction(val target: String,
                                   icon: Icon? = ClionEmbeddedPlatformioIcons.LogoPlatformIO)
   : PlatformioAction(text, toolTip, icon) {
 
-  override fun displayTextInToolbar(): Boolean = true
+  init {
+    templatePresentation.putClientProperty(ActionUtil.SHOW_TEXT_IN_TOOLBAR, true)
+  }
 
   override fun actionPerformed(e: AnActionEvent) {
     actionPerformed(e, false, true, true, "run", "-t", target)
@@ -56,6 +59,14 @@ open class PlatformioTargetAction(val target: String,
       e.project?.service<PlatformioService>()?.isTargetActive(target) == true
   }
 }
+
+@NlsSafe
+private const val UPLOAD_COMMAND = "pio run -t upload"
+object PlatformioUploadAction : PlatformioTargetAction(target = "upload",
+                                                       text = { ClionEmbeddedPlatformioBundle.message("action.upload") },
+                                                       toolTip = { UPLOAD_COMMAND },
+                                                       icon = ClionEmbeddedPlatformioIcons.LogoPlatformIO)
+
 @NlsSafe
 private const val UPLOAD_MONITOR_COMMAND = "pio run -t upload -t monitor"
 
@@ -65,7 +76,7 @@ object PlatformioUploadMonitorAction : PlatformioTargetAction(target = "upload-m
                                                               icon = ClionEmbeddedPlatformioIcons.LogoPlatformIO) {
 
   override fun actionPerformed(e: AnActionEvent) {
-    super.actionPerformed(e, false, true, true, "run", "-t", "upload", "-t", "monitor")
+    super.actionPerformedKillAlreadyRunning(e, false, true, true, "run", "-t", "upload", "-t", "monitor")
   }
 
 }

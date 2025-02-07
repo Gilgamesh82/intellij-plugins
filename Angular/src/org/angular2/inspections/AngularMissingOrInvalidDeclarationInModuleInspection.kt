@@ -4,6 +4,7 @@ package org.angular2.inspections
 import com.intellij.codeInspection.LocalInspectionTool
 import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
+import com.intellij.lang.javascript.evaluation.JSTypeEvaluationLocationProvider.withTypeEvaluationLocation
 import com.intellij.lang.javascript.psi.JSElementVisitor
 import com.intellij.lang.javascript.psi.ecma6.ES6Decorator
 import com.intellij.openapi.project.Project
@@ -21,7 +22,7 @@ import org.angular2.entities.Angular2Declaration
 import org.angular2.entities.Angular2EntitiesProvider
 import org.angular2.entities.Angular2FrameworkHandler
 import org.angular2.entities.source.Angular2SourceModule
-import org.angular2.inspections.quickfixes.ConvertToStandaloneQuickFix
+import org.angular2.inspections.quickfixes.ConvertToStandaloneNonStandaloneQuickFix
 import org.angular2.lang.Angular2Bundle
 
 class AngularMissingOrInvalidDeclarationInModuleInspection : LocalInspectionTool() {
@@ -52,7 +53,7 @@ class AngularMissingOrInvalidDeclarationInModuleInspection : LocalInspectionTool
                                        ProblemHighlightType.GENERIC_ERROR_OR_WARNING
                                      else
                                        ProblemHighlightType.WEAK_WARNING,
-                                     ConvertToStandaloneQuickFix(entity.className)
+                                     ConvertToStandaloneNonStandaloneQuickFix(entity.className, true)
               )
             }
             else if (modules.size > 1) {
@@ -60,7 +61,7 @@ class AngularMissingOrInvalidDeclarationInModuleInspection : LocalInspectionTool
                 classIdentifier,
                 Angular2Bundle.htmlMessage("angular.inspection.invalid-declaration-in-module.message.declared-in-many",
                                            entity.htmlClassName,
-                                           renderEntityList(modules)))
+                                           withTypeEvaluationLocation(decorator) { renderEntityList(modules) }))
             }
           }
         }

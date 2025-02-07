@@ -1,12 +1,12 @@
-// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.javascript.flex.refactoring.extractSuper;
 
 import com.intellij.javascript.flex.refactoring.RenameMoveUtils;
 import com.intellij.lang.actionscript.psi.ActionScriptPsiImplUtil;
 import com.intellij.lang.javascript.JavaScriptBundle;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lang.javascript.dialects.JSDialectSpecificHandlersFactory;
 import com.intellij.lang.javascript.flex.ECMAScriptImportOptimizer;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.flex.ImportUtils;
 import com.intellij.lang.javascript.flex.XmlBackedJSClassImpl;
 import com.intellij.lang.javascript.presentable.JSFormatUtil;
@@ -436,7 +436,7 @@ public class FlexExtractSuperProcessor extends BaseRefactoringProcessor {
       if (mySourceClass instanceof XmlBackedJSClassImpl) {
         VirtualFile vFile = sourceFile.getVirtualFile();
         vFile.rename(this, FileUtilRt.getNameWithoutExtension(vFile.getName()) +
-                           "." + JavaScriptSupportLoader.ECMA_SCRIPT_L4_FILE_EXTENSION);
+                           "." + FlexSupportLoader.ECMA_SCRIPT_L4_FILE_EXTENSION);
         document = FileDocumentManager.getInstance().getDocument(vFile);
       }
       else {

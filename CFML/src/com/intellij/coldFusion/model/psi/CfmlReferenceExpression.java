@@ -1,4 +1,4 @@
-// Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.coldFusion.model.psi;
 
 import com.intellij.codeInsight.lookup.LookupElement;
@@ -80,13 +80,10 @@ public class CfmlReferenceExpression extends AbstractQualifiedReference<CfmlRefe
   @Override
   protected boolean processVariantsInner(PsiScopeProcessor processor) {
     CfmlTypedElement typedOwner = CfmlPsiUtil.getTypedQualifierInner(this);
-    PsiType type = null;
-    if (typedOwner != null) {
-      type = typedOwner.getPsiType();
-    }
-    else {
+    if (typedOwner == null) {
       return processUnqualifiedVariants(processor);
     }
+    PsiType type = typedOwner.getPsiType();
     // CfmlReferenceExpression qualifier = CfmlPsiUtil.getQualifierInner(this);
     if (type instanceof PsiClassType) {
       PsiClass psiClass;
@@ -203,8 +200,7 @@ public class CfmlReferenceExpression extends AbstractQualifiedReference<CfmlRefe
   }
 
   @Override
-  @NotNull
-  protected CfmlReferenceExpression parseReference(String newText) {
+  protected @NotNull CfmlReferenceExpression parseReference(String newText) {
     return CfmlPsiUtil.createReferenceExpression(newText, getProject());
   }
 
@@ -213,9 +209,8 @@ public class CfmlReferenceExpression extends AbstractQualifiedReference<CfmlRefe
     return findChildByType(CfscriptTokenTypes.POINT);
   }
 
-  @NotNull
   @Override
-  public TextRange getRangeInElement() {
+  public @NotNull TextRange getRangeInElement() {
     if (getScope() != null) {
       return new TextRange(0, getTextLength());
     }
@@ -233,8 +228,7 @@ public class CfmlReferenceExpression extends AbstractQualifiedReference<CfmlRefe
     return false;
   }
 
-  @Nullable
-  public PsiElement getScope() {
+  public @Nullable PsiElement getScope() {
     PsiElement identifier = findChildByType(CfscriptTokenTypes.IDENTIFIER);
     if (identifier != null) {
       PsiElement prevSubling = identifier.getPrevSibling();

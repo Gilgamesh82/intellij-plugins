@@ -27,7 +27,7 @@ private val charsets: Collection<String> = Charset.availableCharsets().filter { 
 
 private val namePattern = Regex("(.+)\\((\\d+)\\)\\s*")
 
-fun ConnectableList.createNewProfile(oldProfileName: String?, newPortName: String? = null) {
+internal fun ConnectableList.createNewProfile(oldProfileName: String?, newPortName: String? = null) {
 
   val service = service<SerialProfileService>()
   val profiles = service.getProfiles().toMutableMap()
@@ -147,11 +147,16 @@ fun Panel.serialSettings(disposable: Disposable,
       .changesBind(SerialPortProfile::localEcho)
       .label(message("label.local.echo"))
       .enabled(!readOnly)
+
+    checkBox("")
+      .changesBind(SerialPortProfile::showHardwareControls)
+      .label(message("label.show.hardware.flow.control"))
+
     customize(UnscaledGapsY(bottom = 20))
   }.layout(RowLayout.PARENT_GRID)
 }
 
-fun portSettings(connectableList: ConnectableList, portName: @NlsSafe String, disposable: Disposable): DialogPanel {
+internal fun portSettings(connectableList: ConnectableList, portName: @NlsSafe String, disposable: Disposable): DialogPanel {
   val portStatus = service<SerialPortService>().portStatus(portName)
   return panel {
     row {
@@ -189,7 +194,7 @@ fun portSettings(connectableList: ConnectableList, portName: @NlsSafe String, di
   }
 }
 
-fun profileSettings(connectableList: ConnectableList, disposable: Disposable): DialogPanel? {
+internal fun profileSettings(connectableList: ConnectableList, disposable: Disposable): DialogPanel? {
   val (profileName, profile) = connectableList.getSelectedProfile() ?: (null to null)
   if (profile != null && profileName != null) {
     var portCombobox: ComboBox<String>? = null
@@ -214,14 +219,14 @@ fun profileSettings(connectableList: ConnectableList, disposable: Disposable): D
 
         comboBox(portNames).label(message("label.port"))
           .validationOnInput(portValidation)
-          .columns(30)
+          .resizableColumn()
           .applyToComponent {
             isEditable = true
             editor.item = profile.portName
             portCombobox = this
           }
 
-      }.layout(RowLayout.PARENT_GRID)
+      }.layout(RowLayout.LABEL_ALIGNED)
       serialSettings(disposable = disposable, profile = profile) {
         val service = service<SerialProfileService>()
         val profiles = service.getProfiles().toMutableMap()

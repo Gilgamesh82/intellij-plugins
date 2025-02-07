@@ -32,15 +32,17 @@
   </extensionPoints>
 
   <extensions defaultExtensionNs="com.intellij">
+    <codeStyleSettingsModifier
+      implementation="com.intellij.prettierjs.codeStyle.PrettierCodeStyleSettingsModifier"
+      order="first, before org.editorconfig.EditorConfigCodeStyleSettingsModifier"/>
     <dependencySupport kind="javascript" coordinate="npm:prettier" displayName="Prettier"/>
-    <projectService serviceImplementation="com.intellij.prettierjs.PrettierLanguageServiceManager"/>
     <projectConfigurable
       parentId="Settings.JavaScript"
       id="settings.javascript.prettier"
       bundle="messages.PrettierBundle"
       key="configurable.PrettierConfigurable.display.name"
       instance="com.intellij.prettierjs.PrettierConfigurable"/>
-    <directoryProjectConfigurator implementation="com.intellij.prettierjs.PrettierProjectConfigurator" />
+    <directoryProjectConfigurator implementation="com.intellij.prettierjs.PrettierProjectConfigurator"/>
     <actionOnSaveInfoProvider id="PrettierOnSaveInfoProvider"
                               implementation="com.intellij.prettierjs.PrettierConfigurable$PrettierOnSaveInfoProvider"
                               order="after FormatOnSaveInfoProvider, after EsLintOnSaveInfoProvider, before BuildOnSaveInfoProvider, before FileWatcherOnSaveInfoProvider, before UploadOnSaveInfoProvider"/>
@@ -51,7 +53,6 @@
     <fileType name="JSON" language="JSON" fileNames=".prettierrc"/>
     <lang.substitutor language="JSON" implementationClass="com.intellij.prettierjs.config.PrettierConfigLanguageSubstitutor"/>
     <iconProvider implementation="com.intellij.prettierjs.config.PrettierConfigIconProvider"/>
-    <editorNotificationProvider implementation="com.intellij.prettierjs.PrettierCodeStyleEditorNotificationProvider"/>
     <directoryProjectConfigurator implementation="com.intellij.prettierjs.PrettierCompatibleCodeStyleInstaller"/>
     <javascript.json.schema.provider implementation="com.intellij.prettierjs.config.PrettierConfigJsonSchemaInJsProvider"/>
     <postFormatProcessor implementation="com.intellij.prettierjs.PrettierPostFormatProcessor"/>

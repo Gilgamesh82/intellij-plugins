@@ -1,4 +1,4 @@
-// Copyright 2000-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.flex.model.bc;
 
 import com.intellij.flex.FlexCommonBundle;
@@ -42,10 +42,12 @@ public final class BuildConfigurationNature {
   public static final BuildConfigurationNature
     DEFAULT = new BuildConfigurationNature(TargetPlatform.Web, false, OutputType.Application);
 
+  @Override
   public String toString() {
     return targetPlatform.getPresentableText() + " " + outputType.getPresentableText() + (pureAS ? " (pure ActionScript)" : "");
   }
 
+  @Override
   public boolean equals(final Object other) {
     if (this == other) return true;
     if (other == null || getClass() != other.getClass()) return false;
@@ -59,6 +61,7 @@ public final class BuildConfigurationNature {
     return true;
   }
 
+  @Override
   public int hashCode() {
     int result = targetPlatform.hashCode();
     result = 31 * result + (pureAS ? 1 : 0);
@@ -66,8 +69,7 @@ public final class BuildConfigurationNature {
     return result;
   }
 
-  @NotNull
-  public Icon getIcon() {
+  public @NotNull Icon getIcon() {
     switch (targetPlatform) {
       case Web:
         return pureAS ? FlexSharedIcons.BcWebAs : FlexSharedIcons.BcWebFlex;

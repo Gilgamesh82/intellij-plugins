@@ -59,7 +59,7 @@ public class PerforceChangeList implements CommittedChangeList {
   private List<Change> myIdeaChanges;
   private final PerforceChangeCache myChangeCache;
 
-  public PerforceChangeList(@NotNull final ChangeListData data, final Project project, @NotNull final P4Connection connection, PerforceChangeCache changeCache) {
+  public PerforceChangeList(final @NotNull ChangeListData data, final Project project, final @NotNull P4Connection connection, PerforceChangeCache changeCache) {
     myChangeCache = changeCache;
     myUser = data.USER;
     try {
@@ -85,7 +85,7 @@ public class PerforceChangeList implements CommittedChangeList {
 
   public PerforceChangeList(final Project project,
                             @NotNull DataInput stream,
-                            @NotNull final P4Connection connection,
+                            final @NotNull P4Connection connection,
                             final PerforceClient perforceClient,
                             PerforceChangeCache changeCache) throws IOException {
     myProject = project;
@@ -112,7 +112,7 @@ public class PerforceChangeList implements CommittedChangeList {
     return myIdeaChanges;
   }
 
-  public List<Change> getChangesUnder(@Nullable final VirtualFile root) {
+  public List<Change> getChangesUnder(final @Nullable VirtualFile root) {
     List<Change> ideaChanges = new ArrayList<>();
     for(PerforceChange path: myChangeCache.getChanges(myConnection, myNumber, root)) {
       final int type = path.getType();
@@ -134,8 +134,7 @@ public class PerforceChangeList implements CommittedChangeList {
   }
 
   @Override
-  @NotNull
-  public String getName() {
+  public @NotNull String getName() {
     return myDescription;
   }
 
@@ -149,9 +148,8 @@ public class PerforceChangeList implements CommittedChangeList {
     return myNumber;
   }
 
-  @Nullable
   @Override
-  public String getBranch() {
+  public @Nullable String getBranch() {
     return null;
   }
 
@@ -170,15 +168,16 @@ public class PerforceChangeList implements CommittedChangeList {
     myDescription = newMessage;
   }
 
-  @NlsSafe
-  public String getClient() {
+  public @NlsSafe String getClient() {
     return myClient;
   }
 
+  @Override
   public String toString() {
     return myDescription;
   }
 
+  @Override
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
@@ -194,6 +193,7 @@ public class PerforceChangeList implements CommittedChangeList {
     return true;
   }
 
+  @Override
   public int hashCode() {
     int result;
     result = (myDate != null ? myDate.hashCode() : 0);
@@ -270,8 +270,7 @@ public class PerforceChangeList implements CommittedChangeList {
   }
 
   // The method is used in "Upsource Integration" plugin
-  @NotNull
-  public P4Connection getConnection() {
+  public @NotNull P4Connection getConnection() {
     return myConnection;
   }
 }

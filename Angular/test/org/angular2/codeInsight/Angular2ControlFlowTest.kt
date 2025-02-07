@@ -1,16 +1,17 @@
 // Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.angular2.codeInsight
 
-import com.intellij.javascript.web.configure
+import com.intellij.javascript.testFramework.web.configure
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.lang.javascript.controlflow.BaseJSControlFlowTest
 import com.intellij.lang.javascript.psi.JSControlFlowScope
 import com.intellij.lang.javascript.psi.controlflow.JSControlFlowBuilder
 import org.angular2.Angular2TemplateInspectionsProvider
 import org.angular2.Angular2TestModule
+import org.angular2.Angular2TestModule.Companion.configureDependencies
+import org.angular2.Angular2TestUtil
 import org.angular2.Angular2TsConfigFile
 import org.angular2.codeInsight.controlflow.Angular2ControlFlowBuilder
-import org.angular2.Angular2TestUtil
 
 class Angular2ControlFlowTest : BaseJSControlFlowTest() {
   override fun getTestDataPath(): String = Angular2TestUtil.getBaseTestDataPath() + "controlflow/"
@@ -59,10 +60,12 @@ class Angular2ControlFlowTest : BaseJSControlFlowTest() {
     doTest(signature, skipTSConfig = false, modules)
   }
 
-  private fun doTest(signature: String, skipTSConfig: Boolean = false,
-                     modules: Array<out Angular2TestModule> = arrayOf(Angular2TestModule.ANGULAR_CORE_15_1_5,
-                                                                      Angular2TestModule.ANGULAR_COMMON_15_1_5)) {
-    Angular2TestModule.configureCopy(myFixture, *modules)
+  private fun doTest(
+    signature: String, skipTSConfig: Boolean = false,
+    modules: Array<out Angular2TestModule> = arrayOf(Angular2TestModule.ANGULAR_CORE_15_1_5,
+                                                     Angular2TestModule.ANGULAR_COMMON_15_1_5),
+  ) {
+    myFixture.configureDependencies(*modules)
     if (!skipTSConfig) {
       myFixture.configure(Angular2TsConfigFile())
     }

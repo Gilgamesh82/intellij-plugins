@@ -3,7 +3,7 @@ package org.jetbrains.vuejs.lang.expr.parser
 
 import com.intellij.lang.PsiBuilder
 import com.intellij.lang.javascript.JSTokenTypes
-import com.intellij.lang.javascript.JavaScriptBundle
+import com.intellij.lang.javascript.JavaScriptCoreBundle
 import com.intellij.lang.javascript.ecmascript6.parsing.TypeScriptExpressionParser
 import com.intellij.lang.javascript.ecmascript6.parsing.TypeScriptParser
 import com.intellij.lang.javascript.parsing.JavaScriptParserBase
@@ -14,9 +14,8 @@ class VueTSParser(builder: PsiBuilder) : TypeScriptParser(builder), VueExprParse
 
   private val extraParser = VueJSExtraParser(this, ::parseExpressionOptional, ::parseFilterArgumentList, ::parseScriptGeneric)
 
-  init {
-    myExpressionParser = VueTSExpressionParser(this, extraParser)
-  }
+  override val expressionParser: VueTSExpressionParser =
+    VueTSExpressionParser(this, extraParser)
 
   override fun parseEmbeddedExpression(root: IElementType, attributeInfo: VueAttributeInfo?) {
     extraParser.parseEmbeddedExpression(root, attributeInfo, VueJSStubElementTypes.EMBEDDED_EXPR_CONTENT_TS)
@@ -34,7 +33,7 @@ class VueTSParser(builder: PsiBuilder) : TypeScriptParser(builder), VueExprParse
       }
       if (builder.tokenType === JSTokenTypes.COMMA) {
         if (first) first = false
-        builder.error(JavaScriptBundle.message("javascript.parser.message.expected.type"))
+        builder.error(JavaScriptCoreBundle.message("javascript.parser.message.expected.type"))
         //parse Foo<,,,,>
         continue
       }
@@ -44,11 +43,6 @@ class VueTSParser(builder: PsiBuilder) : TypeScriptParser(builder), VueExprParse
       first = false
     }
     typeArgumentList.done(VueJSStubElementTypes.SCRIPT_SETUP_TYPE_PARAMETER_LIST)
-  }
-
-  override fun getExpressionParser(): VueTSExpressionParser {
-    // Let's hack around TypeScriptParser type parameters
-    return super.getExpressionParser() as VueTSExpressionParser
   }
 
   class VueTSExpressionParser(parser: VueTSParser, private val extraParser: VueJSExtraParser) : TypeScriptExpressionParser(parser) {

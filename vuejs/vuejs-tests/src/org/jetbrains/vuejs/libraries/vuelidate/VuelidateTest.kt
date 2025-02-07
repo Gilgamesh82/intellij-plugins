@@ -2,9 +2,9 @@
 package org.jetbrains.vuejs.libraries.vuelidate
 
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
-import com.intellij.webSymbols.moveToOffsetBySignature
-import com.intellij.webSymbols.renderLookupItems
-import com.intellij.webSymbols.resolveReference
+import com.intellij.webSymbols.testFramework.moveToOffsetBySignature
+import com.intellij.webSymbols.testFramework.renderLookupItems
+import com.intellij.webSymbols.testFramework.resolveReference
 import junit.framework.TestCase
 import org.jetbrains.vuejs.lang.VueInspectionsProvider
 import org.jetbrains.vuejs.lang.VueTestModule
@@ -18,6 +18,7 @@ class VuelidateTest : BasePlatformTestCase() {
   override fun setUp() {
     super.setUp()
     myFixture.configureVueDependencies(VueTestModule.VUE_2_6_10, VueTestModule.VUELIDATE_0_7_13)
+    myFixture.createFile("imports.ts", "import 'vuelidate/vue'")
   }
 
   fun testCompletion() {

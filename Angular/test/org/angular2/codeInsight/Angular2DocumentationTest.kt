@@ -1,7 +1,7 @@
 package org.angular2.codeInsight
 
-import com.intellij.javascript.web.WebFrameworkTestConfigurator
-import com.intellij.webSymbols.checkDocumentationAtCaret
+import com.intellij.javascript.testFramework.web.WebFrameworkTestConfigurator
+import com.intellij.webSymbols.testFramework.checkDocumentationAtCaret
 import org.angular2.Angular2TestCase
 import org.angular2.Angular2TestModule
 import org.angular2.Angular2TsConfigFile
@@ -93,6 +93,10 @@ class Angular2DocumentationTest : Angular2TestCase("documentation", true) {
   fun testDeferBlockPrefetchOn() = doTest(Angular2TestModule.ANGULAR_CORE_17_3_0, ext = "html")
 
   fun testDeferBlockOnTrigger() = doTest(Angular2TestModule.ANGULAR_CORE_17_3_0, ext = "html")
+
+  fun testDeferBlockHydrate() = doTest(Angular2TestModule.ANGULAR_CORE_19_0_0_NEXT_4, ext = "html")
+
+  fun testDeferBlockHydrateNever() = doTest(Angular2TestModule.ANGULAR_CORE_19_0_0_NEXT_4, ext = "html")
 
   fun testDefaultValueJSDoc() = doTest()
 

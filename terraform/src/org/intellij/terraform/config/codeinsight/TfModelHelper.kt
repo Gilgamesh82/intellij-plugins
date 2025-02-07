@@ -19,12 +19,20 @@ import org.intellij.terraform.hcl.psi.HCLBlock
 import org.intellij.terraform.hcl.psi.HCLObject
 import org.intellij.terraform.hcl.psi.HCLStringLiteral
 import org.intellij.terraform.hcl.psi.getNameElementUnquoted
+import org.intellij.terraform.opentofu.patterns.OpenTofuPatterns
+import org.intellij.terraform.opentofu.model.getEncryptionKeyProviderProperties
+import org.intellij.terraform.opentofu.model.getEncryptionMethodProperties
 import java.util.*
 
 internal object TfModelHelper {
   private val LOG = Logger.getInstance(TfModelHelper::class.java)
 
   fun getBlockProperties(block: HCLBlock): Map<String, PropertyOrBlockType> {
+    val fileType = block.containingFile.originalFile.fileType
+    return getBlockPropertiesInternal(block).filter { it.value.canBeUsedIn(fileType) }
+  }
+
+  private fun getBlockPropertiesInternal(block: HCLBlock): Map<String, PropertyOrBlockType> {
     val type = block.getNameElementUnquoted(0) ?: return emptyMap()
     // Special case for 'backend' blocks, since it's located not in root
 
@@ -42,6 +50,8 @@ internal object TfModelHelper {
       TerraformPatterns.ProvisionerBlock.accepts(block) -> return getProvisionerProperties(block)
       TerraformPatterns.ResourceLifecycleBlock.accepts(block) -> return TypeModel.ResourceLifecycle.properties
       TerraformPatterns.ResourceConnectionBlock.accepts(block) -> return getConnectionProperties(block)
+      OpenTofuPatterns.KeyProviderBlock.accepts(block) -> return getEncryptionKeyProviderProperties(block)
+      OpenTofuPatterns.EncryptionMethodBlock.accepts(block) -> return getEncryptionMethodProperties(block)
       block.parent !is PsiFile -> return getModelBlockProperties(block, type)
     }
 
@@ -238,13 +248,13 @@ internal object TfModelHelper {
   @RequiresReadLock
   fun getAllTypesForBlockByIdentifier(blockPointer: SmartPsiElementPointer<HCLBlock>): List<BlockType> {
     val block = blockPointer.element ?: return emptyList()
-    val model = TypeModelProvider.getModel(block)
     val typeString = block.getNameElementUnquoted(0) ?: return emptyList()
     val identifier = block.getNameElementUnquoted(1) ?: return emptyList()
+    val model = TypeModelProvider.getModel(block)
     val types = when (typeString) {
-      HCL_RESOURCE_IDENTIFIER -> model.allResources().filter { it.type == identifier }
-      HCL_DATASOURCE_IDENTIFIER -> model.allDatasources().filter { it.type == identifier }
-      HCL_PROVIDER_IDENTIFIER -> model.allProviders().filter { it.type == identifier }
+      HCL_RESOURCE_IDENTIFIER -> model.allResources().filter { it.type == identifier }.toList()
+      HCL_DATASOURCE_IDENTIFIER -> model.allDatasources().filter { it.type == identifier }.toList()
+      HCL_PROVIDER_IDENTIFIER -> model.allProviders().filter { it.type == identifier }.toList()
       else -> emptyList()
     }
     return types

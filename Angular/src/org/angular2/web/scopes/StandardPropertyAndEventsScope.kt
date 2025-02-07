@@ -5,10 +5,12 @@ import com.intellij.documentation.mdn.MdnSymbolDocumentation
 import com.intellij.documentation.mdn.getDomEventDocumentation
 import com.intellij.html.webSymbols.WebSymbolsHtmlQueryConfigurator
 import com.intellij.javascript.web.js.WebJSTypesUtil
-import com.intellij.javascript.webSymbols.types.TypeScriptSymbolTypeSupport
+import com.intellij.lang.javascript.evaluation.JSTypeEvaluationLocationProvider.withTypeEvaluationLocation
+import com.intellij.lang.javascript.psi.JSFile
 import com.intellij.lang.javascript.psi.JSType
 import com.intellij.lang.javascript.psi.ecma6.TypeScriptPropertySignature
 import com.intellij.lang.javascript.psi.ecmal4.JSAttributeList
+import com.intellij.lang.javascript.psi.types.JSTypeSourceFactory
 import com.intellij.model.Pointer
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
@@ -26,6 +28,7 @@ import org.angular2.codeInsight.attributes.DomElementSchemaRegistry
 import org.angular2.lang.html.parser.Angular2AttributeNameParser
 import org.angular2.lang.types.Angular2TypeUtils
 import org.angular2.web.Angular2PsiSourcedSymbol
+import org.angular2.web.Angular2SymbolOrigin
 import org.angular2.web.EVENT_ATTR_PREFIX
 import java.util.*
 
@@ -74,7 +77,7 @@ class StandardPropertyAndEventsScope(private val templateFile: PsiFile) : WebSym
       get() = true
 
     override val origin: WebSymbolOrigin
-      get() = WebSymbolOrigin.create(Angular2Framework.ID, typeSupport = TypeScriptSymbolTypeSupport())
+      get() = Angular2SymbolOrigin.empty
 
     override val namespace: SymbolNamespace
       get() = NAMESPACE_HTML
@@ -99,8 +102,11 @@ class StandardPropertyAndEventsScope(private val templateFile: PsiFile) : WebSym
       val tagNamespace = key.first
       val tagName = key.second
 
-      val typeSource = Angular2TypeUtils.createJSTypeSourceForXmlElement(templateFile)
-      val tagClass = WebJSTypesUtil.getHtmlElementClassType(typeSource, tagName)
+      val typeSource = if (templateFile is JSFile)
+        JSTypeSourceFactory.createTypeSource(templateFile)
+      else
+        Angular2TypeUtils.createJSTypeSourceForXmlElement(templateFile)
+      val tagClass = withTypeEvaluationLocation(templateFile) { WebJSTypesUtil.getHtmlElementClassType(typeSource, tagName) }
       val elementEventMap = Angular2TypeUtils.getElementEventMap(typeSource).asRecordType(templateFile)
 
       val allowedElementProperties = DomElementSchemaRegistry.getElementProperties(tagNamespace, tagName).toMutableSet()

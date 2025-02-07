@@ -39,7 +39,7 @@ import java.nio.charset.StandardCharsets
 import java.util.*
 import kotlin.math.max
 
-class Flexmojos3GenerateConfigTask(private val myModule: Module,
+internal class Flexmojos3GenerateConfigTask(private val myModule: Module,
                                    mavenProject: MavenProject?,
                                    mavenTree: MavenProjectsTree?,
                                    private val myConfigFilePath: String,
@@ -123,7 +123,7 @@ class Flexmojos3GenerateConfigTask(private val myModule: Module,
               val outputFilePath = FlexmojosImporter.getOutputFilePath(mavenProject)
               val lastSlashIndex = outputFilePath.lastIndexOf("/")
               val outputFileName = outputFilePath.substring(lastSlashIndex + 1)
-              val outputFolderPath = outputFilePath.substring(0, max(0.0, lastSlashIndex.toDouble()).toInt())
+              val outputFolderPath = outputFilePath.substring(0, max(0, lastSlashIndex))
 
               var outputFile = LocalFileSystem.getInstance().refreshAndFindFileByPath(outputFilePath)
               if (outputFile == null) {

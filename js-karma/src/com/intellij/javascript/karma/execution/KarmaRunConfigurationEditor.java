@@ -1,4 +1,4 @@
-// Copyright 2000-2021 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.javascript.karma.execution;
 
 import com.intellij.execution.configuration.EnvironmentVariablesTextFieldWithBrowseButton;
@@ -84,8 +84,7 @@ public class KarmaRunConfigurationEditor extends SettingsEditor<KarmaRunConfigur
       .getPanel();
   }
 
-  @NotNull
-  private static RawCommandLineEditor createOptionsEditor(@Nullable @NlsContexts.StatusText String emptyText) {
+  private static @NotNull RawCommandLineEditor createOptionsEditor(@Nullable @NlsContexts.StatusText String emptyText) {
     RawCommandLineEditor editor = new RawCommandLineEditor();
     JTextField field = editor.getTextField();
     if (field instanceof ExpandableTextField) {
@@ -97,21 +96,15 @@ public class KarmaRunConfigurationEditor extends SettingsEditor<KarmaRunConfigur
     return editor;
   }
 
-  @NotNull
-  private static TextFieldWithBrowseButton createWorkingDirComponent(@NotNull Project project) {
+  private static @NotNull TextFieldWithBrowseButton createWorkingDirComponent(@NotNull Project project) {
     TextFieldWithBrowseButton textFieldWithBrowseButton = new TextFieldWithBrowseButton();
-    SwingHelper.installFileCompletionAndBrowseDialog(
-      project,
-      textFieldWithBrowseButton,
-      JavaScriptBundle.message("rc.workingDirectory.browseDialogTitle"),
-      FileChooserDescriptorFactory.createSingleFolderDescriptor()
-    );
+    var descriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor().withTitle(JavaScriptBundle.message("rc.workingDirectory.browseDialogTitle"));
+    SwingHelper.installFileCompletionAndBrowseDialog(project, textFieldWithBrowseButton, descriptor);
     PathShortener.enablePathShortening(textFieldWithBrowseButton.getTextField(), null);
     return textFieldWithBrowseButton;
   }
 
-  @NotNull
-  private JPanel createScopeKindRadioButtonPanel() {
+  private @NotNull JPanel createScopeKindRadioButtonPanel() {
     JPanel testKindPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, JBUIScale.scale(40), 0));
     testKindPanel.setBorder(JBUI.Borders.emptyLeft(10));
     ButtonGroup buttonGroup = new ButtonGroup();
@@ -140,8 +133,7 @@ public class KarmaRunConfigurationEditor extends SettingsEditor<KarmaRunConfigur
     setCenterBorderLayoutComponent(mySelectedScopeKindPanel, view.getComponent());
   }
 
-  @Nullable
-  private KarmaScopeKind getScopeKind() {
+  private @Nullable KarmaScopeKind getScopeKind() {
     for (Map.Entry<KarmaScopeKind, JRadioButton> entry : myRadioButtonMap.entrySet()) {
       if (entry.getValue().isSelected()) {
         return entry.getKey();
@@ -150,8 +142,7 @@ public class KarmaRunConfigurationEditor extends SettingsEditor<KarmaRunConfigur
     return null;
   }
 
-  @NotNull
-  private KarmaScopeView getScopeKindView(@NotNull KarmaScopeKind scopeKind) {
+  private @NotNull KarmaScopeView getScopeKindView(@NotNull KarmaScopeKind scopeKind) {
     KarmaScopeView view = myScopeKindViewMap.get(scopeKind);
     if (view == null) {
       view = scopeKind.createView(myProject);
@@ -182,8 +173,7 @@ public class KarmaRunConfigurationEditor extends SettingsEditor<KarmaRunConfigur
     panel.repaint();
   }
 
-  @NotNull
-  private static TextFieldWithHistoryWithBrowseButton createConfigurationFileTextField(@NotNull final Project project) {
+  private static @NotNull TextFieldWithHistoryWithBrowseButton createConfigurationFileTextField(final @NotNull Project project) {
     TextFieldWithHistoryWithBrowseButton textFieldWithHistoryWithBrowseButton = new TextFieldWithHistoryWithBrowseButton();
     final TextFieldWithHistory textFieldWithHistory = textFieldWithHistoryWithBrowseButton.getChildComponent();
     textFieldWithHistory.setHistorySize(-1);
@@ -194,19 +184,13 @@ public class KarmaRunConfigurationEditor extends SettingsEditor<KarmaRunConfigur
     SwingHelper.addHistoryOnExpansion(textFieldWithHistory, () -> {
       textFieldWithHistory.setHistory(Collections.emptyList());
       List<VirtualFile> newFiles = KarmaUtil.listPossibleConfigFilesInProject(project);
-      List<String> newFilePaths = ContainerUtil.sorted(ContainerUtil.map(newFiles, file -> {
+      return ContainerUtil.sorted(ContainerUtil.map(newFiles, file -> {
         String path = FileUtil.toSystemDependentName(file.getPath());
         return FileUtil.getLocationRelativeToUserHome(path, false);
       }));
-      return newFilePaths;
     });
-
-    SwingHelper.installFileCompletionAndBrowseDialog(
-      project,
-      textFieldWithHistoryWithBrowseButton,
-      KarmaBundle.message("runConfiguration.config_file.browse_dialog.title"),
-      FileChooserDescriptorFactory.createSingleFileNoJarsDescriptor()
-    );
+    var descriptor = FileChooserDescriptorFactory.createSingleFileNoJarsDescriptor().withTitle(KarmaBundle.message("runConfiguration.config_file.browse_dialog.title"));
+    SwingHelper.installFileCompletionAndBrowseDialog(project, textFieldWithHistoryWithBrowseButton, descriptor);
     return textFieldWithHistoryWithBrowseButton;
   }
 
@@ -258,9 +242,8 @@ public class KarmaRunConfigurationEditor extends SettingsEditor<KarmaRunConfigur
     runConfiguration.setRunSettings(builder.build());
   }
 
-  @NotNull
   @Override
-  protected JComponent createEditor() {
+  protected @NotNull JComponent createEditor() {
     return myRootComponent;
   }
 }

@@ -19,6 +19,7 @@ import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent;
 import com.intellij.openapi.vfs.newvfs.events.VFileCreateEvent;
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent;
 import com.intellij.util.Processor;
+import com.intellij.util.containers.ContainerUtil;
 import com.intellij.util.containers.MultiMap;
 import com.intellij.vcsUtil.VcsUtil;
 import kotlinx.coroutines.CoroutineScope;
@@ -40,8 +41,7 @@ public final class PerforceVFSListener extends VcsVFSListener {
     super(PerforceVcs.getInstance(project), coroutineScope);
   }
 
-  @NotNull
-  public static PerforceVFSListener createInstance(@NotNull Project project, @NotNull CoroutineScope coroutineScope) {
+  public static @NotNull PerforceVFSListener createInstance(@NotNull Project project, @NotNull CoroutineScope coroutineScope) {
     PerforceVFSListener listener = new PerforceVFSListener(project, coroutineScope);
     listener.installListeners();
     return listener;
@@ -85,7 +85,7 @@ public final class PerforceVFSListener extends VcsVFSListener {
   }
 
   @Override
-  protected void executeAdd(@NotNull final List<VirtualFile> addedFiles, @NotNull final Map<VirtualFile, VirtualFile> copiedFiles) {
+  protected void executeAdd(final @NotNull List<VirtualFile> addedFiles, final @NotNull Map<VirtualFile, VirtualFile> copiedFiles) {
     saveUnsavedVcsIgnoreFiles();
 
     if (ApplicationManager.getApplication().isUnitTestMode()) {
@@ -117,8 +117,8 @@ public final class PerforceVFSListener extends VcsVFSListener {
   }
 
   @Override
-  protected void performAdding(@NotNull final Collection<VirtualFile> addedFiles,
-                               @NotNull final Map<VirtualFile, VirtualFile> copyFromMap) {
+  protected void performAdding(final @NotNull Collection<VirtualFile> addedFiles,
+                               final @NotNull Map<VirtualFile, VirtualFile> copyFromMap) {
 
     final String title = PerforceBundle.message("progress.title.running.perforce.commands");
     List<VcsOperation> operations = createOperations(addedFiles, copyFromMap);
@@ -142,27 +142,24 @@ public final class PerforceVFSListener extends VcsVFSListener {
     return operations;
   }
 
-  @NotNull
   @Override
   @SuppressWarnings("UnresolvedPropertyKey")
-  protected String getSingleFileAddPromptTemplate() {
+  protected @NotNull String getSingleFileAddPromptTemplate() {
     return PerforceBundle.message("confirmation.text.add.files");
   }
 
-  @NotNull
   @Override
-  protected String getSingleFileAddTitle() {
+  protected @NotNull String getSingleFileAddTitle() {
     return PerforceBundle.message("confirmation.title.add.files");
   }
 
-  @NotNull
   @Override
-  protected String getAddTitle() {
+  protected @NotNull String getAddTitle() {
     return PerforceBundle.message("add.select.files");
   }
 
   @Override
-  protected void performDeletion(@NotNull final List<FilePath> filesToDelete) {
+  protected void performDeletion(final @NotNull List<FilePath> filesToDelete) {
     PerforceVcs.getInstance(myProject).getCheckinEnvironment().scheduleMissingFileForDeletion(filesToDelete);
   }
 
@@ -177,14 +174,13 @@ public final class PerforceVFSListener extends VcsVFSListener {
     return PerforceBundle.message("confirmation.title.remove.files");
   }
 
-  @NotNull
   @Override
-  protected String getDeleteTitle() {
+  protected @NotNull String getDeleteTitle() {
     return PerforceBundle.message("delete.select.files");
   }
 
   @Override
-  protected void processMovedFile(@NotNull final VirtualFile file, @NotNull final String newParentPath, @NotNull final String newName) {
+  protected void processMovedFile(final @NotNull VirtualFile file, final @NotNull String newParentPath, final @NotNull String newName) {
     LOG.debug("processMovedFile " + file + " newParentPath=" + newParentPath + " newName=" + newName);
     updateLastUnchangedContent(file, myChangeListManager);
     PerforceCachingContentRevision.removeCachedContent(file);
@@ -192,7 +188,7 @@ public final class PerforceVFSListener extends VcsVFSListener {
   }
 
   @Override
-  protected void performMoveRename(@NotNull final List<MovedFileInfo> movedFiles) {
+  protected void performMoveRename(final @NotNull List<MovedFileInfo> movedFiles) {
     List<VcsOperation> operations = new ArrayList<>();
     for (MovedFileInfo movedFile : movedFiles) {
       operations.add(new P4MoveRenameOperation(ChangeListManager.getInstance(myProject).getDefaultChangeList().getName(),
@@ -211,6 +207,7 @@ public final class PerforceVFSListener extends VcsVFSListener {
 
   @Override
   protected void beforeContentsChange(@NotNull List<VFileContentChangeEvent> events) {
+    List<VirtualFile> files = new ArrayList<>(events.size());
     for (VFileContentChangeEvent event : events) {
       VirtualFile file = event.getFile();
       updateLastUnchangedContent(file, myChangeListManager);
@@ -218,26 +215,38 @@ public final class PerforceVFSListener extends VcsVFSListener {
       if (!event.isFromRefresh() && myChangeListManager.getStatus(file) == FileStatus.NOT_CHANGED) {
         final P4Connection connection = PerforceConnectionManager.getInstance(myProject).getConnectionForFile(file);
         if (connection != null && PerforceChangeProvider.isAllWriteWorkspace(connection, myProject)) {
-          asyncEdit(file);
+          files.add(file);
         }
       }
     }
+
+    if (!files.isEmpty()) {
+      asyncEdit(files);
+    }
   }
 
-  private void asyncEdit(VirtualFile file) {
-    final PerforceVcs vcs = PerforceVcs.getInstance(myProject);
-    if (vcs.getAsyncEditedFiles().contains(file)) {
+  private void asyncEdit(@NotNull List<VirtualFile> files) {
+    PerforceVcs vcs = PerforceVcs.getInstance(myProject);
+    Set<VirtualFile> exisingAsyncEditedFiles = vcs.getAsyncEditedFiles();
+    VirtualFile[] notEditedFiles = ContainerUtil.filter(files, f -> !exisingAsyncEditedFiles.contains(f)).toArray(VirtualFile[]::new);
+    if (notEditedFiles.length == 0) {
       return;
     }
 
-    vcs.startAsyncEdit(file);
+    vcs.startAsyncEdit(notEditedFiles);
 
-    P4EditOperation op = new P4EditOperation(myChangeListManager.getDefaultListName(), file);
-    op.setSuppressErrors(true);
+    List<P4EditOperation> operations = new ArrayList<>(notEditedFiles.length);
+    for (VirtualFile file : notEditedFiles) {
+      P4EditOperation op = new P4EditOperation(myChangeListManager.getDefaultListName(), file);
+      op.setSuppressErrors(true);
+      operations.add(op);
+    }
     VcsOperationLog.getInstance(myProject).queueOperations(
-      Collections.singletonList(op),
+      operations,
       PerforceBundle.message("progress.title.running.perforce.commands"),
-      PerformInBackgroundOption.ALWAYS_BACKGROUND);
+      PerformInBackgroundOption.ALWAYS_BACKGROUND,
+      () -> vcs.refreshFiles(notEditedFiles)
+    );
   }
 
   public static void updateLastUnchangedContent(VirtualFile file, final ChangeListManager changeListManager) {

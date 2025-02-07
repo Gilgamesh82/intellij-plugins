@@ -1,4 +1,4 @@
-// Copyright 2000-2022 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.coldFusion.UI;
 
 import com.intellij.codeInsight.completion.InsertHandler;
@@ -33,7 +33,7 @@ public class CfmlLookUpItemUtil implements PlatformIcons {
       .withInsertHandler(new ParenthesesInsertHandler<>() {
         @Override
         protected boolean placeCaretInsideParentheses(final InsertionContext context, final LookupElement item) {
-          return functionDescription.getParameters().size() != 0;
+          return !functionDescription.getParameters().isEmpty();
         }
 
         @Override
@@ -91,7 +91,7 @@ public class CfmlLookUpItemUtil implements PlatformIcons {
       tailText = ".";
     }
 
-    if (prefix != null && prefix.length() != 0 && !StringUtil.toLowerCase(name).startsWith(StringUtil.toLowerCase(prefix))) {
+    if (prefix != null && !prefix.isEmpty() && !StringUtil.toLowerCase(name).startsWith(StringUtil.toLowerCase(prefix))) {
       name = prefix + "." + name;
     }
 
@@ -99,16 +99,14 @@ public class CfmlLookUpItemUtil implements PlatformIcons {
       .withInsertHandler(getInsertHandler(element)).withTailText(tailText).withCaseSensitivity(false);
   }
 
-  @Nullable
-  private static InsertHandler<LookupElement> getInsertHandler(PsiNamedElement element) {
+  private static @Nullable InsertHandler<LookupElement> getInsertHandler(PsiNamedElement element) {
     if (CfmlPsiUtil.isFunctionDefinition(element)) {
       return CfmlMethodInsertHandler.getInstance();
     }
     return null;
   }
 
-  @Nullable
-  private static Icon getIcon(PsiElement element) {
+  private static @Nullable Icon getIcon(PsiElement element) {
     if (CfmlPsiUtil.isFunctionDefinition(element)) {
       return IconManager.getInstance().getPlatformIcon(com.intellij.ui.PlatformIcons.Method);
     }

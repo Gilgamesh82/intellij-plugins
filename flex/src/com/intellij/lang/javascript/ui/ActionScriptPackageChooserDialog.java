@@ -1,4 +1,4 @@
-// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.lang.javascript.ui;
 
 import com.intellij.CommonBundle;
@@ -85,7 +85,7 @@ public class ActionScriptPackageChooserDialog extends DialogWrapper {
             Object object = node.getUserObject();
             if (object instanceof VirtualFile) {
               String name = PlatformPackageUtil.getPackageName((VirtualFile)object, myProject);
-              setText(name.length() > 0 ? StringUtil.getShortName(name) : IdeCoreBundle.message("node.default"));
+              setText(!name.isEmpty() ? StringUtil.getShortName(name) : IdeCoreBundle.message("node.default"));
             }
           }
           return this;
@@ -127,7 +127,7 @@ public class ActionScriptPackageChooserDialog extends DialogWrapper {
 
     ActionToolbar toolBar = ActionManager.getInstance().createActionToolbar("ASPackageChooser", group, true);
     panel.add(toolBar.getComponent(), BorderLayout.NORTH);
-    toolBar.getComponent().setAlignmentX(JComponent.LEFT_ALIGNMENT);
+    toolBar.getComponent().setAlignmentX(Component.LEFT_ALIGNMENT);
 
     return panel;
   }
@@ -208,7 +208,7 @@ public class ActionScriptPackageChooserDialog extends DialogWrapper {
     final VirtualFile parentPackage = aPackage.getParent();
     if (parentPackage == null || PlatformPackageUtil.getPackageName(parentPackage, myProject) == null) {
       final DefaultMutableTreeNode rootNode = (DefaultMutableTreeNode)myModel.getRoot();
-      if (qualifiedPackageName.length() == 0) {
+      if (qualifiedPackageName.isEmpty()) {
         rootNode.setUserObject(aPackage);
         return rootNode;
       }
@@ -268,7 +268,7 @@ public class ActionScriptPackageChooserDialog extends DialogWrapper {
                        new InputValidator() {
                          @Override
                          public boolean checkInput(final String inputString) {
-                           return inputString != null && inputString.length() > 0;
+                           return inputString != null && !inputString.isEmpty();
                          }
 
                          @Override

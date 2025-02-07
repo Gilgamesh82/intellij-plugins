@@ -4,12 +4,12 @@ import com.intellij.lang.typescript.compiler.languageService.protocol.commands.T
 
 data class Angular2GetGeneratedElementTypeRequestArgs(
   override val file: String,
+  override val projectFileName: String?,
   val startOffset: Int,
   val endOffset: Int,
   override val forceReturnType: Boolean = false,
 ) : TypeScriptGetElementTypeRequestArgsBase {
 
-  override fun copyWithForceReturn(forceReturnType: Boolean): TypeScriptGetElementTypeRequestArgsBase =
-    copy(forceReturnType = forceReturnType)
-
+  override val isContextual: Boolean
+    get() = false
 }

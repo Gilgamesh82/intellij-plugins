@@ -42,7 +42,6 @@ import org.jetbrains.osgi.jps.build.CachingBundleInfoProvider;
 import org.osmorc.facet.OsmorcFacet;
 import org.osmorc.i18n.OsmorcBundle;
 
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -51,10 +50,9 @@ import java.nio.file.Path;
  *
  * @author <a href="mailto:janthomae@janthomae.de">Jan Thomä</a>
  */
-public final class NonOsgiMavenDependencyInspection extends XmlSuppressableInspectionTool {
-  @NotNull
+final class NonOsgiMavenDependencyInspection extends XmlSuppressableInspectionTool {
   @Override
-  public PsiElementVisitor buildVisitor(@NotNull ProblemsHolder problemsHolder, boolean isOnTheFly) {
+  public @NotNull PsiElementVisitor buildVisitor(@NotNull ProblemsHolder problemsHolder, boolean isOnTheFly) {
     boolean isMaven = MavenDomUtil.isMavenFile(problemsHolder.getFile());
     return !isMaven ? PsiElementVisitor.EMPTY_VISITOR : new XmlElementVisitor() {
       @Override
@@ -64,7 +62,7 @@ public final class NonOsgiMavenDependencyInspection extends XmlSuppressableInspe
           if (dependency != null) {
             String scope = dependency.getScope().getStringValue();
             if (!MavenConstants.SCOPE_TEST.equals(scope)) {
-              File repo = MavenProjectsManager.getInstance(tag.getProject()).getLocalRepository();
+              Path repo = MavenProjectsManager.getInstance(tag.getProject()).getRepositoryPath();
               String groupId = dependency.getGroupId().getStringValue();
               String artifactId = dependency.getArtifactId().getStringValue();
               String version = dependency.getVersion().getStringValue();

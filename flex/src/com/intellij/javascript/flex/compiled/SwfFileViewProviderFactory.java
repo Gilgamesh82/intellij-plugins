@@ -4,7 +4,7 @@ package com.intellij.javascript.flex.compiled;
 import com.intellij.javascript.flex.FlexApplicationComponent;
 import com.intellij.lang.Language;
 import com.intellij.lang.javascript.DialectDetector;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.psi.impl.JSFileImpl;
 import com.intellij.lang.javascript.psi.stubs.impl.JSFileCachedData;
 import com.intellij.openapi.fileTypes.FileType;
@@ -12,6 +12,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -48,7 +49,12 @@ public final class SwfFileViewProviderFactory implements FileViewProviderFactory
     CompiledJSFile(FileViewProvider fileViewProvider) {
       super(fileViewProvider, Objects.requireNonNullElse(
         DialectDetector.getJSLanguageFromFileType(fileViewProvider.getVirtualFile()),
-        JavaScriptSupportLoader.ECMA_SCRIPT_L4));
+        FlexSupportLoader.ECMA_SCRIPT_L4));
+    }
+
+    @Override
+    public @Nullable PsiElement getCachedMirror() {
+      return getMirror();
     }
 
     @Override

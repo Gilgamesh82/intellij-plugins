@@ -14,11 +14,11 @@ import org.jetbrains.vuejs.index.VUE_COMPONENT_STYLES_INDEX_KEY
 import org.jetbrains.vuejs.libraries.VUE_CLASS_COMPONENT
 import java.util.*
 
-class VueDefaultTemplatePropertiesProvider : DefaultTemplatePropertiesProvider {
+private class VueDefaultTemplatePropertiesProvider : DefaultTemplatePropertiesProvider {
   override fun fillProperties(directory: PsiDirectory, props: Properties) {
     if (!hasVueFiles(directory.project) && !isVueContext(directory))
       return
-    if (TypeScriptConfigServiceImpl.getNearestParentTsConfigs(directory.virtualFile, false).isNotEmpty()) {
+    if (TypeScriptConfigServiceImpl.getNearestParentTsConfigs(directory.project, directory.virtualFile, false).isNotEmpty()) {
       props["SCRIPT_LANG_ATTR"] = " lang=\"ts\""
       props["USE_DEFINE_COMPONENT"] = supportsDefineComponent(directory)
       props["USE_VUE_EXTEND"] = true

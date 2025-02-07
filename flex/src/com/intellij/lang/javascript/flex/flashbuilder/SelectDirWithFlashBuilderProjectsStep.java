@@ -7,7 +7,7 @@ import com.intellij.lang.javascript.flex.FlexBundle;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.options.ConfigurationException;
-import com.intellij.openapi.ui.LabeledComponent;
+import com.intellij.openapi.ui.LabeledComponentNoThrow;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.util.io.FileUtil;
@@ -29,10 +29,10 @@ import java.util.Objects;
 
 public class SelectDirWithFlashBuilderProjectsStep extends ProjectImportWizardStep {
   private JPanel myMainPanel;
-  private LabeledComponent<TextFieldWithBrowseButton> myInitialPathComponent;
-  private LabeledComponent<TextFieldWithBrowseButton> myExtractPathComponent;
-  private LabeledComponent<JTextField> myProjectNameComponent;
-  private LabeledComponent<TextFieldWithBrowseButton> myProjectLocationComponent;
+  private LabeledComponentNoThrow<TextFieldWithBrowseButton> myInitialPathComponent;
+  private LabeledComponentNoThrow<TextFieldWithBrowseButton> myExtractPathComponent;
+  private LabeledComponentNoThrow<JTextField> myProjectNameComponent;
+  private LabeledComponentNoThrow<TextFieldWithBrowseButton> myProjectLocationComponent;
   private JLabel myMultiProjectNote;
   private JCheckBox myCreateSubfolderCheckBox;
   private ProjectFormatPanel myProjectFormatPanel;
@@ -43,13 +43,13 @@ public class SelectDirWithFlashBuilderProjectsStep extends ProjectImportWizardSt
 
     myExtractPathComponent.setVisible(false);
     myExtractPathComponent.getComponent()
-      .addBrowseFolderListener(null, null, context.getProject(), FileChooserDescriptorFactory.createSingleFolderDescriptor());
+      .addBrowseFolderListener(context.getProject(), FileChooserDescriptorFactory.createSingleFolderDescriptor());
 
     final boolean creatingNewProject = context.isCreatingNewProject();
     myProjectNameComponent.setVisible(creatingNewProject);
     myProjectLocationComponent.setVisible(creatingNewProject);
     myProjectLocationComponent.getComponent()
-      .addBrowseFolderListener(null, null, context.getProject(), FileChooserDescriptorFactory.createSingleFolderDescriptor());
+      .addBrowseFolderListener(context.getProject(), FileChooserDescriptorFactory.createSingleFolderDescriptor());
     myProjectFormatPanel.getPanel().setVisible(creatingNewProject);
 
     myMultiProjectNote.setVisible(false);
@@ -64,14 +64,7 @@ public class SelectDirWithFlashBuilderProjectsStep extends ProjectImportWizardSt
       }
     });
 
-    final FileChooserDescriptor descriptor = new FileChooserDescriptor(true, true, true, true, false, false) {
-      @Override
-      public boolean isFileVisible(final VirtualFile file, final boolean showHiddenFiles) {
-        return (super.isFileVisible(file, showHiddenFiles) &&
-                (file.isDirectory() || FlashBuilderProjectFinder.isFlashBuilderProject(file)) ||
-                FlashBuilderProjectFinder.hasArchiveExtension(file.getPath()));
-      }
-
+    var descriptor = new FileChooserDescriptor(true, true, true, true, false, false) {
       @Override
       public Icon getIcon(final VirtualFile file) {
         // do not use Flash Builder specific icon for zip
@@ -80,10 +73,13 @@ public class SelectDirWithFlashBuilderProjectsStep extends ProjectImportWizardSt
                ? dressIcon(file, getBuilder().getIcon())
                : super.getIcon(file);
       }
-    };
+    }
+      .withFileFilter(file -> FlashBuilderProjectFinder.isFlashBuilderProject(file) ||
+                              FlashBuilderProjectFinder.hasArchiveExtension(file.getPath()))
+      .withTitle(FlexBundle.message("select.flash.builder.workspace.or.project"));
 
-    myInitialPathComponent.getComponent().addBrowseFolderListener(FlexBundle.message("select.flash.builder.workspace.or.project"),
-                                                                  null, getWizardContext().getProject(), descriptor);
+    var button = myInitialPathComponent.getComponent();
+    button.addBrowseFolderListener(getWizardContext().getProject(), descriptor);
   }
 
   private void onInitialPathChanged() {
@@ -172,7 +168,7 @@ public class SelectDirWithFlashBuilderProjectsStep extends ProjectImportWizardSt
   @Override
   public boolean validate() throws ConfigurationException {
     final String path = myInitialPathComponent.getComponent().getText().trim();
-    if (path.length() == 0) {
+    if (path.isEmpty()) {
       throw new ConfigurationException(FlexBundle.message("specify.flash.builder.workspace.or.project.dir"), CommonBundle.getErrorTitle());
     }
     final VirtualFile file = LocalFileSystem.getInstance().refreshAndFindFileByPath(path);

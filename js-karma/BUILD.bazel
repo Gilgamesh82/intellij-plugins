@@ -1,0 +1,100 @@
+### auto-generated section `build intellij.karma` start
+load("@rules_jvm//:jvm.bzl", "jvm_library", "jvm_resources", "jvm_test")
+
+jvm_resources(
+  name = "karma_resources",
+  files = glob(["compatibilityResources/**/*"]),
+  strip_prefix = "compatibilityResources"
+)
+
+jvm_resources(
+  name = "karma_resources_1",
+  files = glob(["resources/**/*"]),
+  strip_prefix = "resources"
+)
+
+jvm_library(
+  name = "karma",
+  module_name = "intellij.karma",
+  visibility = ["//visibility:public"],
+  srcs = glob(["src/**/*.kt", "src/**/*.java"], allow_empty = True),
+  deps = [
+    "@community//platform/lang-impl",
+    "//plugins/JavaScriptLanguage:javascript-impl",
+    "@community//platform/platform-impl:ide-impl",
+    "@community//platform/smRunner",
+    "@lib//:guava",
+    "//plugins/js-test-common:javascript-testing",
+    "@lib//:gson",
+    "//plugins/JavaScriptDebugger:javascript-debugger",
+    "@community//plugins/coverage-common/intellij.platform.coverage.agent:coverage-agent",
+    "//plugins/JavaScriptDebugger/sdk/backend:javascript-debugger-backend",
+    "//plugins/JavaScriptLanguage:javascript",
+    "@community//xml/impl",
+    "@community//platform/xdebugger-api:debugger",
+    "@community//plugins/coverage-common:coverage",
+    "//webcore/impl:webide-impl",
+    "//plugins/JavaScriptDebugger/wip/backend:javascript-wip-backend",
+    "//plugins/JavaScriptDebugger/wip/protocol:javascript-wip-protocol",
+    "@community//platform/script-debugger/debugger-ui:scriptDebugger-ui",
+    "@community//platform/script-debugger/backend:scriptDebugger-backend",
+    "//plugins/JavaScriptDebugger/ChromeConnector:javascript-chrome-connector",
+    "@community//platform/core-ui",
+    "@community//platform/platform-util-io:ide-util-io",
+    "@community//platform/util/jdom",
+  ],
+  runtime_deps = [
+    ":karma_resources",
+    ":karma_resources_1",
+  ]
+)
+
+jvm_library(
+  name = "karma_test_lib",
+  visibility = ["//visibility:public"],
+  srcs = glob(["test/**/*.kt", "test/**/*.java"], allow_empty = True),
+  associates = [":karma"],
+  deps = [
+    "@community//platform/lang-impl",
+    "//plugins/JavaScriptLanguage:javascript-impl",
+    "@community//platform/platform-impl:ide-impl",
+    "@community//platform/platform-impl:ide-impl_test_lib",
+    "@community//platform/smRunner",
+    "@community//platform/smRunner:smRunner_test_lib",
+    "@lib//:guava",
+    "//plugins/js-test-common:javascript-testing",
+    "@lib//:gson",
+    "//plugins/JavaScriptDebugger:javascript-debugger",
+    "@community//plugins/coverage-common/intellij.platform.coverage.agent:coverage-agent",
+    "//plugins/JavaScriptDebugger/sdk/backend:javascript-debugger-backend",
+    "//plugins/JavaScriptLanguage:javascript",
+    "@community//xml/impl",
+    "@community//platform/xdebugger-api:debugger",
+    "@community//plugins/coverage-common:coverage",
+    "@community//plugins/coverage-common:coverage_test_lib",
+    "//webcore/impl:webide-impl",
+    "@lib//:junit4",
+    "//plugins/JavaScriptDebugger/wip/backend:javascript-wip-backend",
+    "//plugins/JavaScriptDebugger/wip/protocol:javascript-wip-protocol",
+    "@community//platform/script-debugger/debugger-ui:scriptDebugger-ui",
+    "@community//platform/script-debugger/backend:scriptDebugger-backend",
+    "//plugins/JavaScriptDebugger/ChromeConnector:javascript-chrome-connector",
+    "@community//platform/testFramework",
+    "@community//platform/testFramework:testFramework_test_lib",
+    "@community//platform/core-ui",
+    "@community//platform/platform-util-io:ide-util-io",
+    "@community//platform/util/jdom",
+    "//plugins/js-test-common/test:javascript-testing-tests_test_lib",
+    "//plugins/JavaScriptLanguage:javascript-testFramework",
+  ],
+  runtime_deps = [
+    ":karma_resources",
+    ":karma_resources_1",
+  ]
+)
+
+jvm_test(
+  name = "karma_test",
+  runtime_deps = [":karma_test_lib"]
+)
+### auto-generated section `build intellij.karma` end

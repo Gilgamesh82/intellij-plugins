@@ -27,25 +27,21 @@ import com.intellij.psi.tree.TokenSet;
 import com.intellij.psi.util.QualifiedName;
 import com.intellij.util.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /** Helps find usages (basic support for usages within .proto files). */
 public class PbFindUsagesProvider implements FindUsagesProvider {
-
   @Override
   public boolean canFindUsagesFor(@NotNull PsiElement psiElement) {
     return psiElement instanceof PbSymbol;
   }
 
-  @Nullable
   @Override
-  public String getHelpId(@NotNull PsiElement psiElement) {
+  public @NotNull String getHelpId(@NotNull PsiElement psiElement) {
     return HelpID.FIND_OTHER_USAGES;
   }
 
-  @NotNull
   @Override
-  public String getType(@NotNull PsiElement element) {
+  public @NotNull String getType(@NotNull PsiElement element) {
     if (element instanceof PbFile) {
       return PbIdeBundle.message("proto.type.file");
     } else if (element instanceof PbPackageName) {
@@ -72,16 +68,14 @@ public class PbFindUsagesProvider implements FindUsagesProvider {
     return PbIdeBundle.message("proto.type.unknown");
   }
 
-  @NotNull
   @Override
-  public String getDescriptiveName(@NotNull PsiElement psiElement) {
+  public @NotNull String getDescriptiveName(@NotNull PsiElement psiElement) {
     return getNodeText(psiElement, true);
   }
 
   @SuppressWarnings("HardCodedStringLiteral")
-  @NotNull
   @Override
-  public String getNodeText(@NotNull PsiElement psiElement, boolean useFullName) {
+  public @NotNull String getNodeText(@NotNull PsiElement psiElement, boolean useFullName) {
     PbSymbol symbol = ObjectUtils.tryCast(psiElement, PbSymbol.class);
     if (symbol != null) {
       if (useFullName) {
@@ -97,9 +91,8 @@ public class PbFindUsagesProvider implements FindUsagesProvider {
     return psiElement.toString();
   }
 
-  @Nullable
   @Override
-  public WordsScanner getWordsScanner() {
+  public @NotNull WordsScanner getWordsScanner() {
     PbParserDefinition parserDefinition = new PbParserDefinition();
     return new DefaultWordsScanner(
         parserDefinition.createLexer(null),

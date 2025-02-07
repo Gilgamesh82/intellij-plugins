@@ -7,14 +7,18 @@ import com.intellij.execution.process.CapturingProcessHandler
 import com.intellij.formatting.service.AsyncDocumentFormattingService
 import com.intellij.formatting.service.AsyncFormattingRequest
 import com.intellij.formatting.service.FormattingService
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
 import org.intellij.terraform.config.Constants.TF_FMT
 import org.intellij.terraform.config.TerraformConstants.EXECUTION_NOTIFICATION_GROUP
 import org.intellij.terraform.config.TerraformFileType
-import org.intellij.terraform.config.actions.isTerraformExecutable
+import org.intellij.terraform.config.actions.isExecutableToolFileConfigured
 import org.intellij.terraform.config.util.TFExecutor
+import org.intellij.terraform.config.util.getApplicableToolType
 import org.intellij.terraform.hcl.HCLBundle
+import org.intellij.terraform.install.TfToolType
+import org.intellij.terraform.runtime.ToolPathDetector
 
 internal class TfAsyncFormattingService : AsyncDocumentFormattingService() {
   override fun getName(): String = TF_FMT
@@ -31,36 +35,43 @@ internal class TfAsyncFormattingService : AsyncDocumentFormattingService() {
   override fun createFormattingTask(request: AsyncFormattingRequest): FormattingTask? {
     val context = request.context
     val project = context.project
-    if (!isTerraformExecutable(project)) {
+    val virtualFile = context.virtualFile ?: return null
+    val toolType = getApplicableToolType(virtualFile)
+    ToolPathDetector.getInstance(project).detectPathAndUpdateSettingsIfEmpty(toolType)
+    if (!isExecutableToolFileConfigured(project, toolType)) {
       return null
     }
 
-    val virtualFile = context.virtualFile ?: return null
-    val commandLine = createCommandLine(project)
-    val processHandler = CapturingProcessHandler(commandLine)
+    val commandLine = createCommandLine(project, toolType)
 
     return object : FormattingTask {
+      private var processHandler: CapturingProcessHandler? = null
+
       override fun run() {
         try {
-          processHandler.processInput.write(request.documentText.toByteArray())
-          processHandler.processInput.close()
+          processHandler = CapturingProcessHandler(commandLine)
 
-          val output = processHandler.runProcess()
+          val handler = processHandler ?: return
+          handler.processInput.write(request.documentText.toByteArray())
+          handler.processInput.close()
+
+          val output = handler.runProcess()
           if (output.exitCode == 0) {
             request.onTextReady(output.stdout)
           }
           else {
-            request.onError(HCLBundle.message("terraform.formatter.error.title"), output.stderr)
+            request.onError(HCLBundle.message("terraform.formatter.error.title", toolType.executableName), output.stderr)
           }
         }
         catch (e: Exception) {
-          request.onError(HCLBundle.message("terraform.formatter.error.title"),
-                          HCLBundle.message("terraform.formatter.error.message", virtualFile.name))
+          logger<TfAsyncFormattingService>().warn("Failed to run FormattingTask", e)
+          request.onError(HCLBundle.message("terraform.formatter.error.title", toolType.executableName),
+                          HCLBundle.message("terraform.formatter.error.message", virtualFile.name, toolType.executableName))
         }
       }
 
       override fun cancel(): Boolean {
-        processHandler.destroyProcess()
+        processHandler?.destroyProcess()
         return true
       }
 
@@ -68,9 +79,9 @@ internal class TfAsyncFormattingService : AsyncDocumentFormattingService() {
     }
   }
 
-  private fun createCommandLine(project: Project): GeneralCommandLine =
-    TFExecutor.`in`(project)
-      .withPresentableName(TF_FMT)
+  private fun createCommandLine(project: Project, applicableToolType: TfToolType): GeneralCommandLine =
+    TFExecutor.`in`(project, applicableToolType)
+      .withPresentableName(HCLBundle.message("tool.format.display", applicableToolType.displayName))
       .withParameters("fmt", "-")
       .createCommandLine()
 }

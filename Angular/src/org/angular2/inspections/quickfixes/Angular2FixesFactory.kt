@@ -1,9 +1,12 @@
 // Copyright 2000-2023 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package org.angular2.inspections.quickfixes
 
+import com.intellij.codeInsight.CodeInsightSettings
 import com.intellij.codeInsight.hint.QuestionAction
+import com.intellij.codeInsight.hint.ShowParameterInfoHandler
 import com.intellij.codeInsight.navigation.getPsiElementPopup
 import com.intellij.codeInspection.LocalQuickFix
+import com.intellij.codeInspection.LocalQuickFixAndIntentionActionOnPsiElement
 import com.intellij.lang.ecmascript6.psi.impl.JSImportPathConfigurationImpl
 import com.intellij.lang.ecmascript6.psi.impl.TypeScriptImportPathBuilder
 import com.intellij.lang.injection.InjectedLanguageManager
@@ -37,6 +40,8 @@ import org.angular2.codeInsight.Angular2DeclarationsScope
 import org.angular2.codeInsight.Angular2DeclarationsScope.DeclarationProximity
 import org.angular2.codeInsight.attributes.Angular2ApplicableDirectivesProvider
 import org.angular2.codeInsight.attributes.Angular2AttributeDescriptor
+import org.angular2.codeInsight.shouldPopupParameterInfoOnCompletion
+import org.angular2.editor.delayCompletionAutoPopupOnImport
 import org.angular2.entities.*
 import org.angular2.entities.source.Angular2SourceDirectiveProperty
 import org.angular2.inspections.actions.Angular2ActionFactory
@@ -59,9 +64,9 @@ object Angular2FixesFactory {
   @TestOnly
   @NonNls
   @JvmField
-  val DECLARATION_TO_CHOOSE = Key.create<String>("declaration.to.choose")
+  val DECLARATION_TO_CHOOSE: Key<String> = Key.create<String>("declaration.to.choose")
 
-  fun getCreateInputTransformFixes(attribute: XmlAttribute, expressionType: String): List<LocalQuickFix> {
+  fun getCreateInputTransformFixes(attribute: XmlAttribute, expressionType: String): List<LocalQuickFixAndIntentionActionOnPsiElement> {
     val descriptor = attribute.descriptor.asSafely<Angular2AttributeDescriptor>() ?: return emptyList()
     val propertyName = descriptor.info
                          .takeIf {
@@ -74,7 +79,7 @@ object Angular2FixesFactory {
     if (input == null || input.transformParameterType != null)
       return emptyList()
 
-    val quickFixes = SmartList<LocalQuickFix>()
+    val quickFixes = SmartList<LocalQuickFixAndIntentionActionOnPsiElement>()
     when (JSCompositeTypeFactory.optimizeTypeIfComposite(input.type,
                                                          JSUnionOrIntersectionType.OptimizedKind.OPTIMIZED_REMOVED_NULL_UNDEFINED)) {
       is JSBooleanType -> quickFixes.add(AddInputTransformFunctionQuickFix(BooleanAttribute, propertyName, expressionType, input.owner))
@@ -88,9 +93,11 @@ object Angular2FixesFactory {
   fun ensureDeclarationResolvedAfterCodeCompletion(element: PsiElement, editor: Editor) {
     val candidates = getCandidatesForResolution(element, true)
     if (!candidates.get(DeclarationProximity.IMPORTABLE).isEmpty()) {
+      delayCompletionAutoPopupOnImport(editor)
       Angular2ActionFactory.createNgModuleImportAction(editor, element, true).execute()
     }
     else if (!candidates.get(DeclarationProximity.NOT_DECLARED_IN_ANY_MODULE).isEmpty()) {
+      delayCompletionAutoPopupOnImport(editor)
       selectAndRun(editor,
                    Angular2Bundle.message("angular.quickfix.ngmodule.declare.select.declarable",
                                           getCommonNameForDeclarations(candidates.get(DeclarationProximity.NOT_EXPORTED_BY_MODULE))),
@@ -99,11 +106,17 @@ object Angular2FixesFactory {
       }
     }
     else if (!candidates.get(DeclarationProximity.NOT_EXPORTED_BY_MODULE).isEmpty()) {
+      delayCompletionAutoPopupOnImport(editor)
       selectAndRun(editor,
                    Angular2Bundle.message("angular.quickfix.ngmodule.export.select.declarable",
                                           getCommonNameForDeclarations(candidates.get(DeclarationProximity.NOT_EXPORTED_BY_MODULE))),
                    candidates.get(DeclarationProximity.NOT_EXPORTED_BY_MODULE)) { candidate ->
         Angular2ActionFactory.createExportNgModuleDeclarationAction(editor, element, candidate, true)
+      }
+    } else {
+      // Show parameter info popup immediately
+      if (shouldPopupParameterInfoOnCompletion(element) && CodeInsightSettings.getInstance().AUTO_POPUP_PARAMETER_INFO) {
+        ShowParameterInfoHandler.invoke(element.project, editor, element.containingFile, -1, null, false)
       }
     }
   }
@@ -126,8 +139,10 @@ object Angular2FixesFactory {
   }
 
   @JvmStatic
-  fun getCandidatesForResolution(element: PsiElement,
-                                 codeCompletion: Boolean): MultiMap<DeclarationProximity, Angular2Declaration> {
+  fun getCandidatesForResolution(
+    element: PsiElement,
+    codeCompletion: Boolean,
+  ): MultiMap<DeclarationProximity, Angular2Declaration> {
     val scope = Angular2DeclarationsScope(element)
     val importsOwner = scope.importsOwner
     if (importsOwner == null || !scope.isInSource(importsOwner)) {
@@ -241,8 +256,10 @@ object Angular2FixesFactory {
     return result
   }
 
-  private fun removeLocalLibraryElements(context: PsiElement,
-                                         declarations: List<Angular2Declaration>): Collection<Angular2Declaration> {
+  private fun removeLocalLibraryElements(
+    context: PsiElement,
+    declarations: List<Angular2Declaration>,
+  ): Collection<Angular2Declaration> {
     val contextFile = context.containingFile.originalFile.virtualFile
     val config = AngularConfigProvider.findAngularConfig(context.project, contextFile) ?: return declarations
     val contextProject = config.getProject(contextFile) ?: return declarations
@@ -270,9 +287,11 @@ object Angular2FixesFactory {
     }
   }
 
-  private fun hasNonRelativeModuleName(context: PsiElement,
-                                       declaration: PsiElement?,
-                                       declarationFile: VirtualFile): Boolean {
+  private fun hasNonRelativeModuleName(
+    context: PsiElement,
+    declaration: PsiElement?,
+    declarationFile: VirtualFile,
+  ): Boolean {
     if (declaration == null) return false
     val builder = TypeScriptImportPathBuilder(JSImportPathConfigurationImpl(
       unwrapImplicitElement(context), unwrapImplicitElement(declaration), declarationFile, false, "Foo"))
@@ -323,10 +342,12 @@ object Angular2FixesFactory {
       Angular2Bundle.message("angular.entity.directive")
   }
 
-  private fun selectAndRun(editor: Editor,
-                           @Nls title: String,
-                           declarations: Collection<Angular2Declaration>,
-                           actionFactory: (Angular2Declaration) -> QuestionAction?) {
+  private fun selectAndRun(
+    editor: Editor,
+    @Nls title: String,
+    declarations: Collection<Angular2Declaration>,
+    actionFactory: (Angular2Declaration) -> QuestionAction?,
+  ) {
     if (declarations.isEmpty()) {
       return
     }

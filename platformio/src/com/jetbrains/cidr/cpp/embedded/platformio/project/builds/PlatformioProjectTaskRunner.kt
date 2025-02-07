@@ -5,13 +5,10 @@ import com.intellij.build.BuildViewManager
 import com.intellij.build.events.MessageEvent
 import com.intellij.build.progress.BuildProgress
 import com.intellij.build.progress.BuildProgressDescriptor
-import com.intellij.execution.process.CapturingProcessHandler
-import com.intellij.execution.process.ProcessEvent
-import com.intellij.execution.process.ProcessListener
-import com.intellij.execution.process.ProcessNotCreatedException
-import com.intellij.execution.process.ProcessOutputTypes
+import com.intellij.execution.process.*
 import com.intellij.ide.impl.isTrusted
 import com.intellij.openapi.application.EDT
+import com.intellij.openapi.application.writeIntentReadAction
 import com.intellij.openapi.components.service
 import com.intellij.openapi.externalSystem.util.ExternalSystemApiUtil
 import com.intellij.openapi.fileEditor.FileDocumentManager
@@ -24,8 +21,8 @@ import com.intellij.task.*
 import com.jetbrains.cidr.cpp.embedded.platformio.ClionEmbeddedPlatformioBundle
 import com.jetbrains.cidr.cpp.embedded.platformio.project.ID
 import com.jetbrains.cidr.cpp.embedded.platformio.project.LOG
+import com.jetbrains.cidr.cpp.embedded.platformio.project.PlatformioCliBuilder
 import com.jetbrains.cidr.cpp.embedded.platformio.project.PlatformioWorkspace
-import com.jetbrains.cidr.cpp.embedded.platformio.project.PlatfromioCliBuilder
 import com.jetbrains.cidr.cpp.embedded.platformio.ui.notifyPlatformioNotFound
 import com.jetbrains.cidr.cpp.execution.build.runners.CLionCompileResolveConfigurationTaskRunner
 import com.jetbrains.cidr.cpp.toolchains.CPPEnvironment
@@ -82,11 +79,13 @@ class PlatformioTaskRunner : CidrTaskRunner {
       return promise
     }
     withContext(Dispatchers.EDT) {
-      FileDocumentManager.getInstance().saveAllDocuments()
+      writeIntentReadAction {
+        FileDocumentManager.getInstance().saveAllDocuments()
+      }
     }
 
     try {
-      val compilerCommandLine = PlatfromioCliBuilder(false, project, true)
+      val compilerCommandLine = PlatformioCliBuilder(false, project, true)
 
       @Nls val title: String
       when (task) {
@@ -107,7 +106,7 @@ class PlatformioTaskRunner : CidrTaskRunner {
       val processHandler = CapturingProcessHandler(compilerCommandLine.build())
       processHandler.addProcessListener(object : ProcessListener {
         override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
-          buildProgress.output(event.text, outputType == ProcessOutputTypes.STDOUT)
+          buildProgress.output(event.text, !ProcessOutputType.isStderr(outputType))
         }
       })
 

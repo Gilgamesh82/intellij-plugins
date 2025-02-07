@@ -60,8 +60,7 @@ public class MeteorMustacheTagPsiReference extends PsiPolyVariantReferenceBase<H
     return super.isReferenceTo(element);
   }
 
-  @Nullable
-  public static String getTemplateName(PsiElement myElement) {
+  public static @Nullable String getTemplateName(PsiElement myElement) {
     if (!myElement.isValid()) return null;
 
     PsiElement parent = getTagForPlace(myElement);
@@ -80,8 +79,7 @@ public class MeteorMustacheTagPsiReference extends PsiPolyVariantReferenceBase<H
     return name.getValue();
   }
 
-  @Nullable
-  public static PsiElement getTagForPlace(PsiElement myElement) {
+  public static @Nullable PsiElement getTagForPlace(PsiElement myElement) {
     PsiFile file = myElement.getContainingFile();
     if (file == null) return null;
     FileViewProvider provider = file.getViewProvider();
@@ -146,17 +144,17 @@ public class MeteorMustacheTagPsiReference extends PsiPolyVariantReferenceBase<H
 
 
 
-    if (allPossibleHelpers.size() == 0) return ResolveResult.EMPTY_ARRAY;
+    if (allPossibleHelpers.isEmpty()) return ResolveResult.EMPTY_ARRAY;
 
     final String templateName = getTemplateName(myElement);
     if (templateName != null) {
       List<JSPsiElementBase> items = ContainerUtil.findAll(allPossibleHelpers, item -> isTemplateQualifier(item, templateName));
-      if (items.size() > 0) return convertToResolveResult(items);
+      if (!items.isEmpty()) return convertToResolveResult(items);
     }
 
     List<JSPsiElementBase> items = ContainerUtil.findAll(allPossibleHelpers, item -> isGlobalHelperQualifier(item));
 
-    if (items.size() > 0) {
+    if (!items.isEmpty()) {
       return convertToResolveResult(items);
     }
 

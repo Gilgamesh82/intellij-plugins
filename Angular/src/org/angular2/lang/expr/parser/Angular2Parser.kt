@@ -4,42 +4,47 @@ package org.angular2.lang.expr.parser
 import com.intellij.lang.PsiBuilder
 import com.intellij.lang.PsiBuilder.Marker
 import com.intellij.lang.WhitespacesBinders
-import com.intellij.lang.ecmascript6.ES6StubElementTypes
 import com.intellij.lang.javascript.*
-import com.intellij.lang.javascript.parsing.*
+import com.intellij.lang.javascript.parsing.AdvancesLexer
+import com.intellij.lang.javascript.parsing.ExpressionParser
+import com.intellij.lang.javascript.parsing.JavaScriptParser
+import com.intellij.lang.javascript.parsing.StatementParser
 import com.intellij.openapi.util.Ref
-import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.TokenType
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.tree.TokenSet
 import org.angular2.codeInsight.blocks.*
 import org.angular2.lang.Angular2Bundle
 import org.angular2.lang.Angular2LangUtil
+import org.angular2.lang.expr.Angular2Language
 import org.angular2.lang.expr.lexer.Angular2TokenTypes
 import org.angular2.lang.expr.parser.Angular2ElementTypes.Companion.createTemplateBindingStatement
 import org.angular2.lang.expr.parser.Angular2ElementTypes.Companion.createTemplateBindingsStatement
-import org.angular2.lang.expr.parser.Angular2Parser.Angular2ExpressionParser
-import org.angular2.lang.expr.parser.Angular2Parser.Angular2StatementParser
+import org.angular2.lang.expr.psi.Angular2TemplateBinding.KeyKind
+import org.angular2.templateBindingVarToDirectiveInput
 import org.jetbrains.annotations.NonNls
 
-class Angular2Parser private constructor(builder: PsiBuilder,
-                                         private val myIsAction: Boolean,
-                                         private val myIsSimpleBinding: Boolean,
-                                         private val myIsJavaScript: Boolean)
-  : JavaScriptParser<Angular2ExpressionParser, Angular2StatementParser, FunctionParser<*>, JSPsiTypeParser<*>>(JavascriptLanguage.INSTANCE,
-                                                                                                               builder) {
+class Angular2Parser private constructor(
+  builder: PsiBuilder,
+  private val myIsAction: Boolean,
+  private val myIsSimpleBinding: Boolean,
+  private val myIsJavaScript: Boolean,
+) : JavaScriptParser(
+  Angular2Language, builder
+) {
   constructor(builder: PsiBuilder) : this(builder, false, false, true)
 
-  init {
-    myExpressionParser = Angular2ExpressionParser()
-    myStatementParser = Angular2StatementParser(this)
-  }
+  override val expressionParser: Angular2ExpressionParser =
+    Angular2ExpressionParser()
+
+  override val statementParser: Angular2StatementParser =
+    Angular2StatementParser(this)
 
   override fun isIdentifierToken(tokenType: IElementType?): Boolean {
     return JSKeywordSets.TS_IDENTIFIERS_TOKENS_SET.contains(tokenType)
   }
 
-  inner class Angular2StatementParser(parser: Angular2Parser?) : StatementParser<Angular2Parser?>(parser) {
+  inner class Angular2StatementParser(parser: Angular2Parser) : StatementParser<Angular2Parser>(parser) {
     fun parseChain(openParens: Int = 0, allowEmpty: Boolean = true) {
       assert(!myIsJavaScript)
       val chain = builder.mark()
@@ -49,8 +54,8 @@ class Angular2Parser private constructor(builder: PsiBuilder,
       while (!builder.eof()) {
         count++
         val expression = builder.mark()
-        if (!expressionParser!!.parseExpressionOptional(false)) {
-          builder.error(JavaScriptBundle.message("javascript.parser.message.expected.expression"))
+        if (!expressionParser.parseExpressionOptional(false)) {
+          builder.error(JavaScriptCoreBundle.message("javascript.parser.message.expected.expression"))
           builder.advanceLexer()
           expression.drop()
         }
@@ -75,7 +80,7 @@ class Angular2Parser private constructor(builder: PsiBuilder,
         }
         else if (tokenType != null) {
           if (!parenExpectedReported && openParensCount > 0) {
-            builder.error(JavaScriptBundle.message("javascript.parser.message.expected.rparen", builder.tokenText))
+            builder.error(JavaScriptCoreBundle.message("javascript.parser.message.expected.rparen", builder.tokenText))
             parenExpectedReported = true
           }
           else {
@@ -84,7 +89,7 @@ class Angular2Parser private constructor(builder: PsiBuilder,
         }
       }
       if (openParensCount > 0) {
-        builder.error(JavaScriptBundle.message("javascript.parser.message.missing.rparen"))
+        builder.error(JavaScriptCoreBundle.message("javascript.parser.message.missing.rparen"))
       }
       when (count) {
         0 -> {
@@ -94,7 +99,7 @@ class Angular2Parser private constructor(builder: PsiBuilder,
           else {
             chain.done(JSStubElementTypes.EMPTY_EXPRESSION)
             if (!allowEmpty) {
-              chain.precede().error(JavaScriptBundle.message("javascript.parser.message.expected.expression"))
+              chain.precede().error(JavaScriptCoreBundle.message("javascript.parser.message.expected.expression"))
             }
           }
         }
@@ -140,6 +145,7 @@ class Angular2Parser private constructor(builder: PsiBuilder,
       do {
         val binding = builder.mark()
         var isVar = false
+        var isLet = true
         var rawKey: String?
         var key: String?
         if (firstBinding) {
@@ -151,7 +157,7 @@ class Angular2Parser private constructor(builder: PsiBuilder,
           isVar = builder.tokenType === JSTokenTypes.LET_KEYWORD
           if (isVar) builder.advanceLexer()
           rawKey = parseTemplateBindingKey(isVar)
-          key = if (isVar) rawKey else templateKey + StringUtil.capitalize(rawKey)
+          key = if (isVar) rawKey else templateBindingVarToDirectiveInput(rawKey, templateKey)
           if (builder.tokenType === JSTokenTypes.COLON) {
             builder.advanceLexer()
           }
@@ -171,17 +177,18 @@ class Angular2Parser private constructor(builder: PsiBuilder,
           name = rawKey
           key = parseTemplateBindingKey(true)
           isVar = true
+          isLet = false
         }
         else if (builder.tokenType !== JSTokenTypes.LET_KEYWORD
-                 && !expressionParser!!.parsePipe()) {
-          builder.error(JavaScriptBundle.message("javascript.parser.message.expected.expression"))
+                 && !expressionParser.parsePipe()) {
+          builder.error(JavaScriptCoreBundle.message("javascript.parser.message.expected.expression"))
         }
-        binding.done(createTemplateBindingStatement(key, isVar, name))
+        binding.done(createTemplateBindingStatement(key, if (isVar) if (isLet) KeyKind.LET else KeyKind.AS else KeyKind.BINDING, name))
         if (builder.tokenType === JSTokenTypes.AS_KEYWORD && !isVar) {
           val localBinding = builder.mark()
           builder.advanceLexer()
           val letName = parseTemplateBindingKey(true)
-          localBinding.done(createTemplateBindingStatement(letName, true, key))
+          localBinding.done(createTemplateBindingStatement(letName, KeyKind.AS, key))
         }
         if (builder.tokenType === JSTokenTypes.SEMICOLON
             || builder.tokenType === JSTokenTypes.COMMA) {
@@ -223,7 +230,7 @@ class Angular2Parser private constructor(builder: PsiBuilder,
     }
   }
 
-  inner class Angular2ExpressionParser : ExpressionParser<Angular2Parser?>(this@Angular2Parser) {
+  inner class Angular2ExpressionParser : ExpressionParser<Angular2Parser>(this@Angular2Parser) {
     override fun parseAssignmentExpression(allowIn: Boolean): Boolean {
       //In Angular EL Pipe is the top level expression instead of Assignment
       return parsePipe()
@@ -264,7 +271,7 @@ class Angular2Parser private constructor(builder: PsiBuilder,
         while (builder.tokenType === JSTokenTypes.COLON) {
           builder.advanceLexer()
           if (!parseAssignmentExpressionChecked()) {
-            builder.error(JavaScriptBundle.message("javascript.parser.message.expected.expression"))
+            builder.error(JavaScriptCoreBundle.message("javascript.parser.message.expected.expression"))
           }
           else {
             hasParams = true
@@ -288,10 +295,10 @@ class Angular2Parser private constructor(builder: PsiBuilder,
     private fun parseAssignmentExpressionChecked(): Boolean {
       val expr = builder.mark()
       if (builder.tokenType === JSTokenTypes.EQ) {
-        builder.error(JavaScriptBundle.message("javascript.parser.message.expected.expression"))
+        builder.error(JavaScriptCoreBundle.message("javascript.parser.message.expected.expression"))
         builder.advanceLexer()
         if (!parsePipe()) {
-          builder.error(JavaScriptBundle.message("javascript.parser.message.expected.expression"))
+          builder.error(JavaScriptCoreBundle.message("javascript.parser.message.expected.expression"))
         }
         expr.done(JSStubElementTypes.ASSIGNMENT_EXPRESSION)
         return true
@@ -309,7 +316,7 @@ class Angular2Parser private constructor(builder: PsiBuilder,
         }
         builder.advanceLexer()
         if (!parsePipe()) {
-          builder.error(JavaScriptBundle.message("javascript.parser.message.expected.expression"))
+          builder.error(JavaScriptCoreBundle.message("javascript.parser.message.expected.expression"))
         }
         expr.done(JSStubElementTypes.ASSIGNMENT_EXPRESSION)
       }
@@ -344,9 +351,8 @@ class Angular2Parser private constructor(builder: PsiBuilder,
       else super.getCurrentBinarySignPriority(allowIn, advance)
     }
 
-    override fun getSafeAccessOperator(): IElementType? {
-      return JSTokenTypes.ELVIS
-    }
+    override val safeAccessOperator: IElementType
+      get() = JSTokenTypes.ELVIS
 
     override fun isReferenceQualifierSeparator(tokenType: IElementType?): Boolean {
       return tokenType === JSTokenTypes.DOT || tokenType === safeAccessOperator
@@ -362,8 +368,10 @@ class Angular2Parser private constructor(builder: PsiBuilder,
       return true
     }
 
-    override fun parseDialectSpecificMemberExpressionPart(markerRef: Ref<Marker>,
-                                                          isInExtendsOrImplementsList: Boolean): Boolean {
+    override fun parseDialectSpecificMemberExpressionPart(
+      markerRef: Ref<Marker>,
+      isInExtendsOrImplementsList: Boolean,
+    ): Boolean {
       if (builder.tokenType === JSTokenTypes.EXCL) {
         builder.advanceLexer()
         val marker = markerRef.get()
@@ -378,12 +386,12 @@ class Angular2Parser private constructor(builder: PsiBuilder,
     override fun parsePropertyNoMarker(property: Marker): Boolean {
       val firstToken = builder.tokenType
       val secondToken = builder.lookAhead(1)
-      if (myJavaScriptParser!!.isIdentifierName(firstToken) &&  // Angular, in contrast to ECMAScript, accepts Reserved Words here
+      if (parser.isIdentifierName(firstToken) &&  // Angular, in contrast to ECMAScript, accepts Reserved Words here
           (secondToken === JSTokenTypes.COMMA || secondToken === JSTokenTypes.RBRACE)) {
         val ref = builder.mark()
         builder.advanceLexer()
         ref.done(JSElementTypes.REFERENCE_EXPRESSION)
-        property.done(ES6StubElementTypes.ES6_PROPERTY)
+        property.done(JSStubElementTypes.PROPERTY)
         return true
       }
       if (Angular2ElementTypes.PROPERTY_NAMES.contains(firstToken)) {
@@ -394,7 +402,7 @@ class Angular2Parser private constructor(builder: PsiBuilder,
         }
       }
       else {
-        builder.error(JavaScriptBundle.message("javascript.parser.message.expected.property.name"))
+        builder.error(JavaScriptCoreBundle.message("javascript.parser.message.expected.property.name"))
         builder.advanceLexer()
       }
       parsePropertyInitializer(false)
@@ -425,7 +433,7 @@ class Angular2Parser private constructor(builder: PsiBuilder,
         currentToken = builder.tokenType
         text = getCurrentLiteralPartTokenText(currentToken)
       }
-      mark.done(JSStubElementTypes.LITERAL_EXPRESSION)
+      mark.done(Angular2StubElementTypes.STRING_PARTS_LITERAL_EXPRESSION)
       val errorMessage = validateLiteralText(literal.toString())
       if (errorMessage != null) {
         builder.error(errorMessage)
@@ -527,6 +535,7 @@ class Angular2Parser private constructor(builder: PsiBuilder,
           BLOCK_DEFER -> parseDeferTrigger(builder, parser)
           BLOCK_PLACEHOLDER -> parsePlaceholderExpression(builder)
           BLOCK_LOADING -> parseLoadingExpression(builder)
+          BLOCK_LET -> parseLetDefinition(builder, parser)
           else -> skipContents(builder)
         }
         if (!builder.eof()) {
@@ -537,22 +546,34 @@ class Angular2Parser private constructor(builder: PsiBuilder,
     }
 
     private fun parseDeferTrigger(builder: PsiBuilder, parser: Angular2StatementParser) {
-      var prefetchParsed = false
-      if (isParameterName(builder, "prefetch")) {
+      val prefetchPrefix = isParameterName(builder, PARAMETER_PREFIX_PREFETCH)
+      val hydratePrefix = !prefetchPrefix && isParameterName(builder, PARAMETER_PREFIX_HYDRATE)
+      if (prefetchPrefix || hydratePrefix) {
+        val prefix = builder.mark()
         builder.advanceLexer()
-        prefetchParsed = true
+        prefix.collapse(Angular2TokenTypes.BLOCK_PARAMETER_PREFIX)
       }
-      if (isParameterName(builder, "when")) {
+      if (isParameterName(builder, PARAMETER_WHEN)) {
         builder.advanceLexer()
         parser.parseChain(allowEmpty = false)
       }
-      else if (isParameterName(builder, "on")) {
+      else if (isParameterName(builder, PARAMETER_ON)) {
         builder.advanceLexer()
         parseOnTrigger(builder)
       }
+      else if (hydratePrefix && isParameterName(builder, PARAMETER_NEVER)) {
+        builder.advanceLexer()
+        if (!builder.eof()) {
+          builder.error(JavaScriptCoreBundle.message("javascript.parser.message.unexpected.token", builder.tokenText))
+        }
+        skipContents(builder)
+      }
       else {
-        if (prefetchParsed) {
+        if (prefetchPrefix) {
           builder.error(Angular2Bundle.message("angular.parse.expression.expected-on-when"))
+        }
+        else if (hydratePrefix) {
+          builder.error(Angular2Bundle.message("angular.parse.expression.expected-on-when-never"))
         }
         skipContents(builder)
       }
@@ -578,9 +599,35 @@ class Angular2Parser private constructor(builder: PsiBuilder,
       }
     }
 
+    private fun parseLetDefinition(builder: PsiBuilder, parser: Angular2StatementParser) {
+      if (!JSKeywordSets.TS_IDENTIFIERS_TOKENS_SET.contains(builder.tokenType)) {
+        builder.error(JavaScriptCoreBundle.message("javascript.parser.message.expected.identifier"))
+        skipContents(builder)
+        return
+      }
+      val definition = builder.mark()
+      builder.advanceLexer()
+      if (builder.tokenType != JSTokenTypes.EQ) {
+        builder.error(JavaScriptCoreBundle.message("javascript.parser.message.expected.equal"))
+        skipContents(builder)
+      }
+      else {
+        builder.advanceLexer()
+        if (builder.eof()) {
+          builder.error(JavaScriptCoreBundle.message("javascript.parser.message.expected.expression"))
+        }
+        else {
+          // Parse binding
+          parser.parseChain()
+        }
+      }
+      definition.done(Angular2StubElementTypes.BLOCK_PARAMETER_VARIABLE)
+      definition.precede().done(JSStubElementTypes.VAR_STATEMENT)
+    }
+
     private fun parseOnTrigger(builder: PsiBuilder) {
       if (!JSKeywordSets.TS_IDENTIFIERS_TOKENS_SET.contains(builder.tokenType)) {
-        builder.error(JavaScriptBundle.message("javascript.parser.message.expected.identifier"))
+        builder.error(JavaScriptCoreBundle.message("javascript.parser.message.expected.identifier"))
         skipContents(builder)
         return
       }
@@ -591,7 +638,7 @@ class Angular2Parser private constructor(builder: PsiBuilder,
         return
       }
       if (builder.tokenType != JSTokenTypes.LPAR) {
-        builder.error(JavaScriptBundle.message("javascript.parser.message.expected.lparen", builder.tokenText!!))
+        builder.error(JavaScriptCoreBundle.message("javascript.parser.message.expected.lparen", builder.tokenText!!))
       }
       else {
         builder.advanceLexer()
@@ -605,17 +652,17 @@ class Angular2Parser private constructor(builder: PsiBuilder,
         parseDeferredTime(builder, JSTokenTypes.RPAR)
       }
       else if (!builder.eof()) {
-        builder.error(JavaScriptBundle.message("javascript.parser.message.unexpected.token", builder.tokenText))
+        builder.error(JavaScriptCoreBundle.message("javascript.parser.message.unexpected.token", builder.tokenText))
         skipContents(builder)
         return
       }
       if (builder.tokenType != JSTokenTypes.RPAR) {
-        builder.error(JavaScriptBundle.message("javascript.parser.message.expected.rparen"))
+        builder.error(JavaScriptCoreBundle.message("javascript.parser.message.expected.rparen"))
       }
       else {
         builder.advanceLexer()
         if (!builder.eof()) {
-          builder.error(JavaScriptBundle.message("javascript.parser.message.unexpected.token", builder.tokenText))
+          builder.error(JavaScriptCoreBundle.message("javascript.parser.message.unexpected.token", builder.tokenText))
         }
       }
       skipContents(builder)
@@ -654,19 +701,21 @@ class Angular2Parser private constructor(builder: PsiBuilder,
       }
       timeLiteral.done(Angular2StubElementTypes.DEFERRED_TIME_LITERAL_EXPRESSION)
       if (!builder.eof() && builder.tokenType != endToken) {
-        builder.error(JavaScriptBundle.message("javascript.parser.message.unexpected.token", builder.tokenText))
+        builder.error(JavaScriptCoreBundle.message("javascript.parser.message.unexpected.token", builder.tokenText))
         while (!builder.eof() && builder.tokenType != endToken) {
           builder.advanceLexer()
         }
       }
     }
 
-    private fun parseRoot(builder: PsiBuilder,
-                          root: IElementType,
-                          statementType: IElementType,
-                          isAction: Boolean,
-                          isSimpleBinding: Boolean,
-                          parseAction: (Angular2StatementParser) -> Unit) {
+    private fun parseRoot(
+      builder: PsiBuilder,
+      root: IElementType,
+      statementType: IElementType,
+      isAction: Boolean,
+      isSimpleBinding: Boolean,
+      parseAction: (Angular2StatementParser) -> Unit,
+    ) {
       val rootMarker = builder.mark()
       val statementMarker = builder.mark()
       parseAction(Angular2Parser(builder, isAction, isSimpleBinding, false).statementParser)
@@ -674,7 +723,7 @@ class Angular2Parser private constructor(builder: PsiBuilder,
       rootMarker.done(root)
     }
 
-    fun parseJS(builder: PsiBuilder, root: IElementType?) {
+    fun parseJS(builder: PsiBuilder, root: IElementType) {
       Angular2Parser(builder).parseJS(root)
     }
 
@@ -716,14 +765,14 @@ class Angular2Parser private constructor(builder: PsiBuilder,
       if (isParameterName(builder, "let")) {
         builder.advanceLexer()
         if (builder.eof()) {
-          builder.error(JavaScriptBundle.message("javascript.parser.message.expected.identifier"))
+          builder.error(JavaScriptCoreBundle.message("javascript.parser.message.expected.identifier"))
           return
         }
         val stmt = builder.mark()
         while (!builder.eof()) {
           val variable = builder.mark()
           if (!JSKeywordSets.TS_IDENTIFIERS_TOKENS_SET.contains(builder.tokenType)) {
-            builder.error(JavaScriptBundle.message("javascript.parser.message.expected.identifier"))
+            builder.error(JavaScriptCoreBundle.message("javascript.parser.message.expected.identifier"))
             if (builder.tokenType.let { it != JSTokenTypes.EQ && it != JSTokenTypes.COMMA }) {
               builder.advanceLexer()
             }
@@ -741,12 +790,12 @@ class Angular2Parser private constructor(builder: PsiBuilder,
           }
           if (!JSKeywordSets.TS_IDENTIFIERS_TOKENS_SET.contains(builder.tokenType)) {
             if (builder.tokenType == JSTokenTypes.COMMA) {
-              builder.error(JavaScriptBundle.message("javascript.parser.message.expected.identifier"))
+              builder.error(JavaScriptCoreBundle.message("javascript.parser.message.expected.identifier"))
             }
             else {
               val errorStart = builder.mark()
               builder.advanceLexer()
-              errorStart.error(JavaScriptBundle.message("javascript.parser.message.expected.identifier"))
+              errorStart.error(JavaScriptCoreBundle.message("javascript.parser.message.expected.identifier"))
             }
           }
           else {
@@ -783,7 +832,7 @@ class Angular2Parser private constructor(builder: PsiBuilder,
 
     private fun tryParseParameterVariable(builder: PsiBuilder): Boolean {
       if (!JSKeywordSets.TS_IDENTIFIERS_TOKENS_SET.contains(builder.tokenType)) {
-        builder.error(JavaScriptBundle.message("javascript.parser.message.expected.identifier"))
+        builder.error(JavaScriptCoreBundle.message("javascript.parser.message.expected.identifier"))
         return false
       }
       else {

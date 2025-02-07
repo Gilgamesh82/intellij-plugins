@@ -12,9 +12,21 @@
     <orderEntry type="module" module-name="intellij.platform.testFramework" scope="TEST" />
     <orderEntry type="module" module-name="intellij.javascript" scope="TEST" />
     <orderEntry type="module" module-name="intellij.vuejs" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.css.frontback" />
+    <orderEntry type="module" module-name="intellij.css" />
     <orderEntry type="module" module-name="intellij.javascript.psi.impl" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.javascript.frontback.impl" />
+    <orderEntry type="module" module-name="intellij.css.impl" />
+    <orderEntry type="module" module-name="intellij.java.rt" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.javascript.parser" />
+    <orderEntry type="module" module-name="intellij.html.tools" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.xml.parser" />
+    <orderEntry type="module" module-name="intellij.spellchecker" />
+    <orderEntry type="module" module-name="intellij.platform.indexing.impl" />
     <orderEntry type="module" module-name="intellij.javascript.testFramework" scope="TEST" />
     <orderEntry type="module" module-name="intellij.javascript.impl" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.platform.analysis.impl" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.platform.lang.impl" scope="TEST" />
     <orderEntry type="module" module-name="intellij.javascript.plugin" scope="TEST" />
     <orderEntry type="module" module-name="intellij.css.psi" scope="TEST" />
     <orderEntry type="module" module-name="intellij.copyright" scope="TEST" />
@@ -25,10 +37,14 @@
     <orderEntry type="module" module-name="intellij.stylus" scope="TEST" />
     <orderEntry type="module" module-name="intellij.xml.tests" scope="TEST" />
     <orderEntry type="library" scope="TEST" name="StreamEx" level="project" />
+    <orderEntry type="library" scope="TEST" name="gson" level="project" />
     <orderEntry type="module" module-name="intellij.platform.core.ui" scope="TEST" />
     <orderEntry type="module" module-name="intellij.javascript.web" scope="TEST" />
     <orderEntry type="module" module-name="intellij.webpack" scope="TEST" />
     <orderEntry type="module" module-name="intellij.platform.lsp" />
     <orderEntry type="module" module-name="intellij.platform.webSymbols" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.platform.lsp.testFramework" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.javascript.web.tests" scope="TEST" />
+    <orderEntry type="module" module-name="intellij.platform.webSymbols.testFramework" scope="TEST" />
   </component>
 </module>

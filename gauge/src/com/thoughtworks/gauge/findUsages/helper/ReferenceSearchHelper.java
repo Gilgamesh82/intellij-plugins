@@ -52,13 +52,11 @@ public class ReferenceSearchHelper {
            GaugeUtil.isGaugeElement(element);
   }
 
-  @NotNull
-  public StepCollector getStepCollector(PsiElement element) {
+  public @NotNull StepCollector getStepCollector(PsiElement element) {
     return new StepCollector(element.getProject());
   }
 
-  @NotNull
-  public static List<PsiElement> getPsiElements(StepCollector collector, PsiElement element) {
+  public static @NotNull List<PsiElement> getPsiElements(StepCollector collector, PsiElement element) {
     List<PsiElement> elements = new ArrayList<>();
     if (element instanceof ConceptStepImpl) {
       elements = collector.get(getConceptStepText((ConceptStepImpl)element));
@@ -85,7 +83,7 @@ public class ReferenceSearchHelper {
   }
 
   private static String getStepText(String text, PsiElement element) {
-    String stepText = text.length() > 0 && text.charAt(0) == '"' ? text.substring(1, text.length() - 1) : text;
+    String stepText = !text.isEmpty() && text.charAt(0) == '"' ? text.substring(1, text.length() - 1) : text;
     return SpecPsiImplUtil.getStepValueFor(element, stepText, false).getStepText();
   }
 }

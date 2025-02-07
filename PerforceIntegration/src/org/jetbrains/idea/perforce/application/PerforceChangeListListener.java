@@ -22,7 +22,7 @@ import java.util.List;
 
 // it assumes it is not called on AWT thread
 public class PerforceChangeListListener implements ChangeListListener {
-  private final static Logger LOG = Logger.getInstance(PerforceChangeListListener.class);
+  private static final Logger LOG = Logger.getInstance(PerforceChangeListListener.class);
   private final Project myProject;
   private final PerforceNumberNameSynchronizer mySynchronizer;
 
@@ -125,7 +125,7 @@ public class PerforceChangeListListener implements ChangeListListener {
 
   private static String getP4Description(final ChangeList list) {
     String description = list.getComment().trim();
-    if (description.length() == 0) description = list.getName();
+    if (description.isEmpty()) description = list.getName();
     return description;
   }
 

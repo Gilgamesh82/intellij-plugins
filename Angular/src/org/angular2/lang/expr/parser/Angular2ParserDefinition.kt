@@ -10,23 +10,30 @@ import com.intellij.lang.javascript.parsing.JavaScriptParser
 import com.intellij.lang.javascript.types.JSFileElementType
 import com.intellij.lexer.Lexer
 import com.intellij.openapi.project.Project
+import com.intellij.psi.FileViewProvider
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
 import com.intellij.psi.tree.IFileElementType
 import org.angular2.lang.expr.Angular2Language
 import org.angular2.lang.expr.lexer.Angular2Lexer
+import org.angular2.lang.expr.psi.impl.Angular2FileImpl
 import org.angular2.lang.html.parser.Angular2HtmlVarAttrTokenType
 
 class Angular2ParserDefinition : JavascriptParserDefinition() {
-  override fun createLexer(project: Project): Lexer {
+  override fun createLexer(project: Project?): Lexer {
     return Angular2Lexer(Angular2Lexer.RegularBinding)
   }
 
-  override fun createParser(project: Project): PsiParser {
+  override fun createParser(project: Project?): PsiParser {
     return Angular2PsiParser()
   }
 
-  override fun createJSParser(builder: PsiBuilder): JavaScriptParser<*, *, *, *> {
+  override fun createJSParser(builder: PsiBuilder): JavaScriptParser {
     return Angular2Parser(builder)
+  }
+
+  override fun createFile(viewProvider: FileViewProvider): PsiFile {
+    return Angular2FileImpl(viewProvider)
   }
 
   override fun getFileNodeType(): IFileElementType {

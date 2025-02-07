@@ -29,9 +29,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.intellij.terraform.TerraformIcons
-import org.intellij.terraform.config.codeinsight.TfInsertHandlerService
 import org.intellij.terraform.config.codeinsight.TerraformCompletionUtil
+import org.intellij.terraform.config.codeinsight.TfInsertHandlerService
 import org.intellij.terraform.config.codeinsight.TfModelHelper.getAllTypesForBlockByIdentifier
 import org.intellij.terraform.config.model.BlockType
 import org.intellij.terraform.config.model.TypeModel
@@ -39,7 +38,7 @@ import org.intellij.terraform.config.model.getProviderForBlockType
 import org.intellij.terraform.hcl.HCLBundle
 import org.intellij.terraform.hcl.psi.HCLBlock
 import org.intellij.terraform.hcl.psi.getNameElementUnquoted
-import org.intellij.terraform.isTerraformPsiFile
+import org.intellij.terraform.isTerraformCompatiblePsiFile
 import org.jetbrains.annotations.Nls
 import javax.swing.Icon
 import javax.swing.event.HyperlinkEvent
@@ -69,7 +68,7 @@ internal class AddProviderAction(element: PsiElement) : LocalQuickFixAndIntentio
   }
 
   override fun isAvailable(project: Project, file: PsiFile, editor: Editor?, startElement: PsiElement, endElement: PsiElement): Boolean {
-    return editor != null && isTerraformPsiFile(file)
+    return editor != null && isTerraformCompatiblePsiFile(file)
            && startElement is HCLBlock
            && startElement.nameElements.size >= 2
   }
@@ -157,7 +156,7 @@ private class SelectUnknownResourceStep(
   }
 
   override fun getIconFor(value: BlockType?): Icon? {
-    return value?.let { TerraformIcons.Terraform }
+    return value?.let { TerraformCompletionUtil.getLookupIcon(pointer.element ?: return@getIconFor null) }
            ?: AllIcons.General.QuestionDialog
   }
 

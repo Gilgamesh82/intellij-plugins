@@ -9,6 +9,7 @@ import com.intellij.codeInsight.template.impl.TextExpression
 import com.intellij.codeInspection.LocalQuickFixAndIntentionActionOnPsiElement
 import com.intellij.javascript.web.js.WebJSResolveUtil
 import com.intellij.lang.ecmascript6.psi.impl.ES6ImportPsiUtil
+import com.intellij.lang.javascript.evaluation.JSTypeEvaluationLocationProvider
 import com.intellij.lang.javascript.psi.JSType
 import com.intellij.lang.javascript.psi.ecma6.TypeScriptClass
 import com.intellij.lang.javascript.psi.util.JSProjectUtil
@@ -47,6 +48,10 @@ class AddInputTransformFunctionQuickFix(private val kind: TransformKind,
     !JSProjectUtil.isInLibrary(startElement)
 
   override fun invoke(project: Project, file: PsiFile, editor: Editor?, startElement: PsiElement, endElement: PsiElement) {
+    JSTypeEvaluationLocationProvider.withTypeEvaluationLocation(startElement) { invokeInner(project, editor, startElement) }
+  }
+
+  private fun invokeInner(project: Project, editor: Editor?, startElement: PsiElement) {
     val input = Angular2EntitiesProvider.getDirective(startElement as? TypeScriptClass)
                   ?.inputs
                   ?.firstNotNullOfOrNull { property ->
@@ -56,8 +61,11 @@ class AddInputTransformFunctionQuickFix(private val kind: TransformKind,
     val objectLiteral = Angular2FixesPsiUtil.getOrCreateInputObjectLiteral(
       input.declarationSource?.remapToCopyIfNeeded(startElement.containingFile)) ?: return
     if (kind == TransformKind.Custom) {
+      val inputType = input.rawJsType
+        ?.substitute(startElement)
+        ?.getTypeText(JSType.TypeTextFormat.CODE)
       val property = Angular2FixesPsiUtil.insertJSObjectLiteralProperty(
-        objectLiteral, TRANSFORM_PROP, "(value: $expressionType): ${input.rawJsType} => ", preferNewLines = false)
+        objectLiteral, TRANSFORM_PROP, "(value: $expressionType): $inputType => ", preferNewLines = false)
       if (IntentionPreviewUtils.isIntentionPreviewActive()) return
       OpenFileDescriptor(project, property.containingFile.virtualFile, property.textRange.endOffset)
         .takeIf { it.canNavigateToSource() }
@@ -71,7 +79,6 @@ class AddInputTransformFunctionQuickFix(private val kind: TransformKind,
         val template = TemplateManager.getInstance(project)
           .createTemplate("ng_insert_input_transform", "angular", "(value: \$TYPE0\$): \$TYPE1\$ => \$END$")
         template.addVariable("TYPE0", TextExpression(expressionType), TextExpression(expressionType), true, true)
-        val inputType = input.rawJsType?.substitute(startElement)?.getTypeText(JSType.TypeTextFormat.CODE)
         template.addVariable("TYPE1", TextExpression(inputType), TextExpression(inputType), true, true)
         template.addVariable("END", EmptyExpression(), true)
         template.setToReformat(true)

@@ -208,14 +208,13 @@ public class FlexBCConfigurable extends ProjectStructureElementConfigurable<Modi
       }
     });
 
-    myOutputFolderField.addBrowseFolderListener(null, null, module.getProject(),
-                                                FileChooserDescriptorFactory.createSingleFolderDescriptor());
+    myOutputFolderField.addBrowseFolderListener(module.getProject(), FileChooserDescriptorFactory.createSingleFolderDescriptor());
 
     initHtmlWrapperControls();
     initRLMControls();
     initCSSControls();
 
-    myOptimizeForCombo.setModel(new CollectionComboBoxModel(Collections.singletonList(""), ""));
+    myOptimizeForCombo.setModel(new CollectionComboBoxModel(new ArrayList<>(Collections.singletonList("")), ""));
     myOptimizeForCombo.setRenderer(SimpleListCellRenderer.create((label, value, index) -> {
       if ("".equals(value)) {
         label.setText("<no optimization>");
@@ -238,10 +237,9 @@ public class FlexBCConfigurable extends ProjectStructureElementConfigurable<Modi
       }
     });
 
-    final String title = "Select Folder with HTML Wrapper Template";
-    final String description = "Folder must contain 'index.template.html' file which must contain '${swf}' macro.";
-    myWrapperTemplateTextWithBrowse.addBrowseFolderListener(title, description, myModule.getProject(),
-                                                            FileChooserDescriptorFactory.createSingleFolderDescriptor());
+    myWrapperTemplateTextWithBrowse.addBrowseFolderListener(myModule.getProject(), FileChooserDescriptorFactory.createSingleFolderDescriptor()
+      .withTitle("Select Folder with HTML Wrapper Template")
+      .withDescription("Folder must contain 'index.template.html' file which must contain '${swf}' macro."));
 
     myCreateHtmlWrapperTemplateButton.addActionListener(new ActionListener() {
       @Override

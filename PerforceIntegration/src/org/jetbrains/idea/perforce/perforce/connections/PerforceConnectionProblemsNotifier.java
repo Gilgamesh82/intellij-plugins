@@ -1,5 +1,7 @@
 package org.jetbrains.idea.perforce.perforce.connections;
 
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationAction;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
@@ -38,18 +40,31 @@ public final class PerforceConnectionProblemsNotifier extends GenericNotifierImp
   }
 
   @Override
+  protected void configureNotification(@NotNull Notification notification, @NotNull Object obj) {
+    NotificationAction inspectAction = NotificationAction.createSimple(PerforceBundle.message("action.inspect.text"), AuthNotifier.INSPECT,
+                                                                       () -> showConnectionState(myProject, false));
+    notification.addAction(inspectAction);
+    if (myConnectionProblems) {
+      NotificationAction retryAction = NotificationAction.createSimple(PerforceBundle.message("action.retry.text"), AuthNotifier.RETRY,
+                                                                       () -> {
+                                                                         if (PerforceLoginManager.getInstance(myProject)
+                                                                           .checkAndRepairAll()) {
+                                                                           notification.expire();
+                                                                         }
+                                                                       });
+      notification.addAction(retryAction);
+      NotificationAction disableAction =
+        NotificationAction.createSimple(PerforceBundle.message("action.gooffline.text"), AuthNotifier.OFFLINE,
+                                        () -> {
+                                          mySettings.disable(true);
+                                          notification.expire();
+                                        });
+      notification.addAction(disableAction);
+    }
+  }
+
+  @Override
   protected boolean ask(Object obj, String description) {
-    if (AuthNotifier.INSPECT.equals(description)) {
-      showConnectionState(myProject, false);
-      return false;
-    }
-    else if (AuthNotifier.OFFLINE.equals(description)) {
-      mySettings.disable(true);
-      return true;
-    }
-    else if (AuthNotifier.RETRY.equals(description)) {
-      return PerforceLoginManager.getInstance(myProject).checkAndRepairAll();
-    }
     return false;
   }
 
@@ -178,19 +193,24 @@ public final class PerforceConnectionProblemsNotifier extends GenericNotifierImp
     recalculateState();
   }
 
-  @NotNull
+  public boolean hasConnectionProblems() {
+    return myConnectionProblems;
+  }
+
+  public static @NotNull PerforceConnectionProblemsNotifier getInstance(@NotNull Project project) {
+    return project.getService(PerforceConnectionProblemsNotifier.class);
+  }
+
   @Override
-  protected Object getKey(Object obj) {
+  protected @NotNull Object getKey(Object obj) {
     return obj;
   }
 
-  @NotNull
   @Override
-  @NlsContexts.NotificationContent
-  protected String getNotificationContent(Object obj) {
+  protected @NotNull @NlsContexts.NotificationContent String getNotificationContent(Object obj) {
     if (myConnectionProblems) {
-      return PerforceBundle.message("connection.server.not.available", AuthNotifier.INSPECT, AuthNotifier.RETRY, AuthNotifier.OFFLINE);
+      return PerforceBundle.message("connection.server.not.available");
     }
-    return PerforceBundle.message("connection.server.not.available.inspect", AuthNotifier.INSPECT);
+    return PerforceBundle.message("connection.server.not.available.inspect");
   }
 }

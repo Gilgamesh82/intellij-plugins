@@ -42,8 +42,7 @@ import java.util.List;
 import static com.jetbrains.plugins.meteor.ide.action.MeteorSyntheticLibraryProvider.getPackagesFolder;
 import static com.jetbrains.plugins.meteor.ide.action.MeteorSyntheticLibraryProvider.getWrappers;
 
-public final class MeteorReferenceContributor implements JSModuleReferenceContributor {
-
+final class MeteorReferenceContributor implements JSModuleReferenceContributor {
   private static final String METEOR_PREFIX = "meteor/";
   private static final int CACHE_VERSION = 2;
 
@@ -86,8 +85,7 @@ public final class MeteorReferenceContributor implements JSModuleReferenceContri
       return ByteArraySequence.EMPTY;
     });
 
-  @NotNull
-  private static ByteArraySequence parseDeclaredExports(@NotNull JsonProperty exports) {
+  private static @NotNull ByteArraySequence parseDeclaredExports(@NotNull JsonProperty exports) {
     JsonValue exportsValue = exports.getValue();
     if (!(exportsValue instanceof JsonArray)) return ByteArraySequence.EMPTY;
     SmartList<String> result = new SmartList<>();
@@ -111,8 +109,7 @@ public final class MeteorReferenceContributor implements JSModuleReferenceContri
 
   private static final class MeteorGlobalReference extends PsiReferenceBase<PsiElement> implements JSModuleBaseReference {
 
-    @NotNull
-    private static String buildFileWithExportsText(@NotNull Collection<String> exports) {
+    private static @NotNull String buildFileWithExportsText(@NotNull Collection<String> exports) {
       StringBuilder text = new StringBuilder();
       for (String s : exports) {
         if (StringUtil.isJavaIdentifier(s)) {
@@ -122,8 +119,7 @@ public final class MeteorReferenceContributor implements JSModuleReferenceContri
       return text.toString();
     }
 
-    @Nullable
-    private final PsiFile myFromText;
+    private final @Nullable PsiFile myFromText;
 
     private MeteorGlobalReference(@NotNull PsiElement element, TextRange rangeInElement, @NotNull Collection<String> exports) {
       super(element, rangeInElement, true);
@@ -139,9 +135,8 @@ public final class MeteorReferenceContributor implements JSModuleReferenceContri
       return getElement();
     }
 
-    @Nullable
     @Override
-    public PsiElement resolve() {
+    public @Nullable PsiElement resolve() {
       return myFromText;
     }
   }
@@ -240,8 +235,7 @@ public final class MeteorReferenceContributor implements JSModuleReferenceContri
     return result.toArray(PsiReference.EMPTY_ARRAY);
   }
 
-  @Nullable
-  private static String getShortName(@NotNull MeteorPackagesUtil.PackageWrapper wrapper) {
+  private static @Nullable String getShortName(@NotNull MeteorPackagesUtil.PackageWrapper wrapper) {
     String originalName = wrapper.getOriginalName();
     int sepIndex = originalName.indexOf(":");
     if (sepIndex > 0) {
@@ -251,8 +245,7 @@ public final class MeteorReferenceContributor implements JSModuleReferenceContri
     return null;
   }
 
-  @Nullable
-  private static VirtualFile getChildWithName(@NotNull String name, @NotNull VirtualFile parent) {
+  private static @Nullable VirtualFile getChildWithName(@NotNull String name, @NotNull VirtualFile parent) {
     for (String extension : MeteorPackagesUtil.EXTENSIONS) {
       VirtualFile candidate = parent.findChild(name + extension);
       if (candidate != null) {

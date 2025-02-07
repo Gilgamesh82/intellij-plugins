@@ -17,13 +17,10 @@ import org.intellij.plugins.postcss.psi.PostCssCustomMedia;
 import org.intellij.plugins.postcss.psi.PostCssCustomSelector;
 import org.intellij.plugins.postcss.psi.PostCssSimpleVariableDeclaration;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-public class PostCssFindUsagesProvider implements FindUsagesProvider {
-
-  @Nullable
+public final class PostCssFindUsagesProvider implements FindUsagesProvider {
   @Override
-  public WordsScanner getWordsScanner() {
+  public @NotNull WordsScanner getWordsScanner() {
     return new DefaultWordsScanner(new PostCssLexer(), TokenSet.create(CssElementTypes.CSS_IDENT), PostCssTokenTypes.POST_CSS_COMMENTS,
                                    TokenSet.create(CssElementTypes.CSS_STRING_TOKEN));
   }
@@ -41,8 +38,7 @@ public class PostCssFindUsagesProvider implements FindUsagesProvider {
   }
 
   @Override
-  @NotNull
-  public String getType(@NotNull PsiElement element) {
+  public @NotNull String getType(@NotNull PsiElement element) {
     if (element instanceof PostCssCustomSelector) {
       return PostCssBundle.message("find.usages.element.type.custom.selector");
     }
@@ -56,14 +52,12 @@ public class PostCssFindUsagesProvider implements FindUsagesProvider {
   }
 
   @Override
-  @NotNull
-  public String getDescriptiveName(@NotNull PsiElement element) {
+  public @NotNull String getDescriptiveName(@NotNull PsiElement element) {
     return ElementDescriptionUtil.getElementDescription(element, UsageViewLongNameLocation.INSTANCE);
   }
 
   @Override
-  @NotNull
-  public String getNodeText(@NotNull PsiElement element, boolean useFullName) {
+  public @NotNull String getNodeText(@NotNull PsiElement element, boolean useFullName) {
     return ElementDescriptionUtil.getElementDescription(element, UsageViewShortNameLocation.INSTANCE);
   }
 }

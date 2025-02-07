@@ -1,0 +1,103 @@
+### auto-generated section `build intellij.prisma` start
+load("@rules_jvm//:jvm.bzl", "jvm_library", "jvm_resources", "jvm_test")
+
+jvm_resources(
+  name = "prisma_resources",
+  files = glob(["resources/**/*"]),
+  strip_prefix = "resources"
+)
+
+jvm_resources(
+  name = "prisma_resources_1",
+  files = glob(["gen-resources/**/*"]),
+  strip_prefix = "gen-resources"
+)
+
+jvm_library(
+  name = "prisma",
+  module_name = "intellij.prisma",
+  visibility = ["//visibility:public"],
+  srcs = glob(["gen/**/*.kt", "gen/**/*.java", "src/**/*.kt", "src/**/*.java"], allow_empty = True),
+  deps = [
+    "@lib//:kotlin-stdlib",
+    "@lib//:jetbrains-markdown",
+    "@community//platform/platform-impl:ide-impl",
+    "@community//platform/usageView",
+    "@lib//:gson",
+    "@community//platform/platform-api:ide",
+    "@community//platform/lang-api:lang",
+    "@community//xml/xml-parser:parser",
+    "@community//platform/lang-impl",
+    "@community//platform/core-impl",
+    "@community//platform/core-api:core",
+    "@community//platform/core-ui",
+    "@community//platform/platform-util-io:ide-util-io",
+    "@community//platform/analysis-impl",
+    "@community//platform/markdown-utils",
+    "@community//platform/code-style-impl:codeStyle-impl",
+    "@community//xml/impl",
+    "//plugins/JavaScriptLanguage:javascript",
+    "//plugins/JavaScriptLanguage:javascript-plugin",
+    "//plugins/JavaScriptLanguage:javascript-impl",
+    "//platform/lsp",
+    "@community//platform/execution",
+    "//platform/lsp-impl",
+  ],
+  runtime_deps = [
+    ":prisma_resources",
+    ":prisma_resources_1",
+  ]
+)
+
+jvm_library(
+  name = "prisma_test_lib",
+  visibility = ["//visibility:public"],
+  srcs = glob(["test/**/*.kt", "test/**/*.java"], allow_empty = True),
+  associates = [":prisma"],
+  deps = [
+    "@lib//:kotlin-stdlib",
+    "@lib//:jetbrains-markdown",
+    "@community//platform/platform-impl:ide-impl",
+    "@community//platform/platform-impl:ide-impl_test_lib",
+    "@community//platform/usageView",
+    "@lib//:gson",
+    "@community//platform/platform-api:ide",
+    "@community//platform/lang-api:lang",
+    "@community//xml/xml-parser:parser",
+    "@community//platform/lang-impl",
+    "@community//platform/core-impl",
+    "@community//platform/core-api:core",
+    "@community//platform/core-ui",
+    "@community//platform/platform-util-io:ide-util-io",
+    "@community//platform/analysis-impl",
+    "@community//platform/markdown-utils",
+    "@community//platform/markdown-utils:markdown-utils_test_lib",
+    "@community//platform/code-style-impl:codeStyle-impl",
+    "@community//xml/impl",
+    "//plugins/JavaScriptLanguage:javascript",
+    "//plugins/JavaScriptLanguage:javascript-plugin",
+    "//plugins/JavaScriptLanguage:javascript-impl",
+    "//platform/lsp",
+    "@community//platform/execution",
+    "@community//platform/testFramework",
+    "@community//platform/testFramework:testFramework_test_lib",
+    "//plugins/JavaScriptLanguage:javascript-testFramework",
+    "//platform/lsp/testFramework",
+    "//ultimate/ultimate-resources:idea-ultimate-customization",
+    "//plugins/JavaScriptLanguage/web-platform:javascript-web",
+    "@community//platform/webSymbols",
+    "//platform/lsp-impl",
+    "//platform/lsp-impl:lsp-impl_test_lib",
+    "@community//platform/webSymbols:webSymbols-testFramework",
+  ],
+  runtime_deps = [
+    ":prisma_resources",
+    ":prisma_resources_1",
+  ]
+)
+
+jvm_test(
+  name = "prisma_test",
+  runtime_deps = [":prisma_test_lib"]
+)
+### auto-generated section `build intellij.prisma` end

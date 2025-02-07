@@ -1,7 +1,7 @@
 package com.intellij.javascript.flex;
 
 import com.intellij.javascript.flex.refactoring.RenameMoveUtils;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.psi.JSFile;
 import com.intellij.psi.PsiDirectory;
 import com.intellij.psi.PsiElement;
@@ -10,6 +10,9 @@ import com.intellij.psi.xml.XmlFile;
 import com.intellij.refactoring.move.moveFilesOrDirectories.MoveFileHandler;
 import com.intellij.usageView.UsageInfo;
 import com.intellij.util.IncorrectOperationException;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
 import java.util.Map;
@@ -20,7 +23,7 @@ import java.util.Map;
 public final class FlexMoveFileHandler extends MoveFileHandler {
   @Override
   public boolean canProcessElement(final PsiFile element) {
-    return element instanceof JSFile || JavaScriptSupportLoader.isFlexMxmFile(element);
+    return element instanceof JSFile || FlexSupportLoader.isFlexMxmFile(element);
   }
 
   @Override
@@ -33,12 +36,12 @@ public final class FlexMoveFileHandler extends MoveFileHandler {
   }
 
   @Override
-  public List<UsageInfo> findUsages(PsiFile psiFile, PsiDirectory newParent, boolean searchInComments, boolean searchInNonJavaFiles) {
+  public @Nullable @Unmodifiable List<UsageInfo> findUsages(@NotNull PsiFile psiFile, @NotNull PsiDirectory newParent, boolean searchInComments, boolean searchInNonJavaFiles) {
     return null;
   }
 
   @Override
-  public void retargetUsages(List<UsageInfo> usageInfos, Map<PsiElement, PsiElement> oldToNewMap) {
+  public void retargetUsages(@Unmodifiable @NotNull List<? extends UsageInfo> usageInfos, @NotNull Map<PsiElement, PsiElement> oldToNewMap) {
 
   }
 

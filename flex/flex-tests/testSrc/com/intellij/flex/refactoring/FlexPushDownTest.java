@@ -1,12 +1,12 @@
-// Copyright 2000-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.flex.refactoring;
 
 import com.intellij.flex.FlexTestOption;
 import com.intellij.flex.FlexTestOptions;
 import com.intellij.flex.util.FlexTestUtils;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lang.javascript.dialects.JSDialectSpecificHandlersFactory;
 import com.intellij.lang.javascript.flex.FlexModuleType;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.psi.ecmal4.JSClass;
 import com.intellij.lang.javascript.psi.resolve.JSInheritanceUtil;
 import com.intellij.lang.javascript.refactoring.memberPushDown.JSPushDownProcessor;
@@ -69,7 +69,7 @@ public class FlexPushDownTest extends MultiFileTestCase {
 
   private void performAction(String from, int docCommentPolicy, boolean makeAbstract, final String[] toPushDown) {
     final JSClass sourceClass =
-      (JSClass)JSDialectSpecificHandlersFactory.forLanguage(JavaScriptSupportLoader.ECMA_SCRIPT_L4).getClassResolver()
+      (JSClass)JSDialectSpecificHandlersFactory.forLanguage(FlexSupportLoader.ECMA_SCRIPT_L4).getClassResolver()
         .findClassByQName(from, GlobalSearchScope.projectScope(getProject()));
     assertNotNull("source class not found: " + from, sourceClass);
     assertFalse(sourceClass.getQualifiedName() + " has no inheritors",

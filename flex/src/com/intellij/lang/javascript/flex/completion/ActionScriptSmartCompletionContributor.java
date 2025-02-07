@@ -6,8 +6,8 @@ import com.intellij.javascript.flex.FlexPredefinedTagNames;
 import com.intellij.javascript.flex.mxml.FlexCommonTypeNames;
 import com.intellij.javascript.flex.mxml.MxmlJSClass;
 import com.intellij.javascript.flex.resolve.ActionScriptClassResolver;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.JSTokenTypes;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lang.javascript.completion.*;
 import com.intellij.lang.javascript.dialects.JSDialectSpecificHandlersFactory;
 import com.intellij.lang.javascript.flex.ImportUtils;
@@ -193,7 +193,7 @@ public final class ActionScriptSmartCompletionContributor extends JSSmartComplet
       }
     }, resolveScope, project);
     for (String qualifiedName : qualifiedNames) {
-      PsiElement element = JSDialectSpecificHandlersFactory.forLanguage(JavaScriptSupportLoader.ECMA_SCRIPT_L4).getClassResolver()
+      PsiElement element = JSDialectSpecificHandlersFactory.forLanguage(FlexSupportLoader.ECMA_SCRIPT_L4).getClassResolver()
         .findClassByQName(qualifiedName, resolveScope);
       if (element != null && !processor.execute(element, ResolveState.initial())) {
         return;
@@ -280,7 +280,7 @@ public final class ActionScriptSmartCompletionContributor extends JSSmartComplet
     final EventsDataCollector eventsDataCollector = new EventsDataCollector();
     if (clazzToProcess instanceof XmlBackedJSClassImpl) {
       XmlFile file = (XmlFile)clazzToProcess.getParent().getContainingFile();
-      if (file != null && JavaScriptSupportLoader.isFlexMxmFile(file)) {
+      if (file != null && FlexSupportLoader.isFlexMxmFile(file)) {
         final XmlDocument xmlDocument = file.getDocument();
         final XmlTag rootTag = xmlDocument == null ? null : xmlDocument.getRootTag();
         final XmlTag[] tags = rootTag == null ? XmlTag.EMPTY

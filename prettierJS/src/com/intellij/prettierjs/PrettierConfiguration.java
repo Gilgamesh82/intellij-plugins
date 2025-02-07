@@ -1,4 +1,4 @@
-// Copyright 2000-2021 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.prettierjs;
 
 import com.intellij.ide.util.PropertiesComponent;
@@ -35,24 +35,27 @@ public final class PrettierConfiguration implements JSNpmLinterState<PrettierCon
 
   @ApiStatus.Internal
   public static class State {
-    @OptionTag("myConfigurationMode")
-    @Nullable
-    public ConfigurationMode configurationMode = null;
+    @OptionTag("myConfigurationMode") public @Nullable ConfigurationMode configurationMode = null;
     @OptionTag("myRunOnSave")
     public boolean runOnSave = PRETTIER_ON_SAVE_DEFAULT;
     @OptionTag("myRunOnReformat")
     public boolean runOnReformat = PRETTIER_ON_REFORMAT_DEFAULT;
     @OptionTag("myFilesPattern")
     public @NotNull String filesPattern = PRETTIER_FILES_PATTERN_DEFAULT;
+    public @NotNull String customIgnorePath = "";
+    public boolean formatFilesOutsideDependencyScope = PRETTIER_FORMAT_FILES_OUTSIDE_DEPENDENCY_SCOPE_DEFAULT;
+    public boolean codeStyleSettingsModifierEnabled = true;
   }
 
-  @NonNls private static final String PACKAGE_PROPERTY = "prettierjs.PrettierConfiguration.Package";
+  private static final @NonNls String PACKAGE_PROPERTY = "prettierjs.PrettierConfiguration.Package";
 
   private static final boolean PRETTIER_ON_SAVE_DEFAULT = false;
+  private static final boolean PRETTIER_FORMAT_FILES_OUTSIDE_DEPENDENCY_SCOPE_DEFAULT = true;
   private static final boolean PRETTIER_ON_REFORMAT_DEFAULT = false;
-  @NonNls private static final String PRETTIER_FILES_PATTERN_DEFAULT = "**/*.{js,ts,jsx,tsx,cjs,cts,mjs,mts,vue,astro}";
+  private static final @NonNls String PRETTIER_FILES_PATTERN_DEFAULT = "**/*.{js,ts,jsx,tsx,cjs,cts,mjs,mts,vue,astro}";
 
   private static final NodePackageDescriptor PKG_DESC = new NodePackageDescriptor(PrettierUtil.PACKAGE_NAME);
+  private static final @NotNull NodePackage EMPTY_PACKAGE = PKG_DESC.createPackage("");
 
   private final @NotNull Project myProject;
   private @NotNull State myState = new State();
@@ -61,8 +64,7 @@ public final class PrettierConfiguration implements JSNpmLinterState<PrettierCon
     myProject = project;
   }
 
-  @NotNull
-  public static PrettierConfiguration getInstance(@NotNull Project project) {
+  public static @NotNull PrettierConfiguration getInstance(@NotNull Project project) {
     return project.getService(PrettierConfiguration.class);
   }
 
@@ -76,9 +78,8 @@ public final class PrettierConfiguration implements JSNpmLinterState<PrettierCon
     myState = state;
   }
 
-  @NotNull
   @Override
-  public NodePackageRef getNodePackageRef() {
+  public @NotNull NodePackageRef getNodePackageRef() {
     return NodePackageRef.create(getPackage(null));
   }
 
@@ -90,10 +91,22 @@ public final class PrettierConfiguration implements JSNpmLinterState<PrettierCon
     return this;
   }
 
-  @NotNull
-  public NodePackage getPackage(@Nullable PsiElement context) {
+  /**
+   * The only allowed usage of this method is in {@link PrettierConfigurable#createPanel()} for the `packageField` binding.
+   * This method is necessary for the correct 'Apply' button state on the Prettier page in Settings:
+   * it must be exactly the opposite of {@code PrettierConfiguration#withLinterPackage()}.
+   */
+  NodePackageRef getPackageRefForPackageFieldBindingInConfigurable() {
+    String value = PropertiesComponent.getInstance(myProject).getValue(PACKAGE_PROPERTY);
+    if (value != null && !value.isBlank()) {
+      return NodePackageRef.create(PKG_DESC.createPackage(value));
+    }
+    return NodePackageRef.create(EMPTY_PACKAGE);
+  }
+
+  public @NotNull NodePackage getPackage(@Nullable PsiElement context) {
     if (isDisabled()) {
-      return PKG_DESC.createPackage("");
+      return EMPTY_PACKAGE;
     }
     if (getConfigurationMode() == ConfigurationMode.MANUAL) {
       String value = PropertiesComponent.getInstance(myProject).getValue(PACKAGE_PROPERTY);
@@ -121,7 +134,7 @@ public final class PrettierConfiguration implements JSNpmLinterState<PrettierCon
       }
       return pkg;
     }
-    return PKG_DESC.createPackage("");
+    return EMPTY_PACKAGE;
   }
 
   public boolean isRunOnSave() {
@@ -132,9 +145,20 @@ public final class PrettierConfiguration implements JSNpmLinterState<PrettierCon
     return !isDisabled() && (isAutomatic() || myState.runOnReformat);
   }
 
-  @NotNull
-  public String getFilesPattern() {
+  public @NotNull String getFilesPattern() {
     return myState.filesPattern;
+  }
+
+  public @NotNull String getCustomIgnorePath() {
+    return myState.customIgnorePath;
+  }
+
+  public boolean getFormatFilesOutsideDependencyScope() {
+    return isManual() && myState.formatFilesOutsideDependencyScope;
+  }
+
+  public boolean getCodeStyleSettingsModifierEnabled() {
+    return !isDisabled() && myState.codeStyleSettingsModifierEnabled;
   }
 
   public ConfigurationMode getConfigurationMode() {
@@ -148,7 +172,7 @@ public final class PrettierConfiguration implements JSNpmLinterState<PrettierCon
     return mode;
   }
 
-  private boolean isDisabled() {
+  public boolean isDisabled() {
     return getConfigurationMode() == ConfigurationMode.DISABLED;
   }
 
@@ -157,7 +181,11 @@ public final class PrettierConfiguration implements JSNpmLinterState<PrettierCon
     return this.myState.configurationMode == defaultState.configurationMode;
   }
 
-  private boolean isAutomatic() {
+  public boolean isAutomatic() {
     return getConfigurationMode() == ConfigurationMode.AUTOMATIC;
+  }
+
+  private boolean isManual() {
+    return getConfigurationMode() == ConfigurationMode.MANUAL;
   }
 }

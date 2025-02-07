@@ -37,6 +37,7 @@ import com.intellij.util.containers.ContainerUtil;
 import com.intellij.util.containers.MultiMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 import org.jetbrains.idea.perforce.PerforceBundle;
 import org.jetbrains.idea.perforce.application.*;
 import org.jetbrains.idea.perforce.perforce.P4File;
@@ -99,7 +100,7 @@ public class RevertAllUnchangedFilesAction extends DumbAwareAction {
     revertUnchanged(project, roots, panel, changeLists);
   }
 
-  public static void revertUnchanged(final Project project, final Collection<VirtualFile> roots, @Nullable final CheckinProjectPanel panel,
+  public static void revertUnchanged(final Project project, final Collection<VirtualFile> roots, final @Nullable CheckinProjectPanel panel,
                                      final ChangeList @Nullable [] selection) {
     final List<VcsException> exceptions = new ArrayList<>();
 
@@ -160,7 +161,7 @@ public class RevertAllUnchangedFilesAction extends DumbAwareAction {
     }
   }
 
-  private static List<VirtualFile> findFilesUnderPerforce(Collection<VirtualFile> roots, Project project) {
+  private static @Unmodifiable List<VirtualFile> findFilesUnderPerforce(Collection<VirtualFile> roots, Project project) {
     final PerforceVcs vcs = PerforceVcs.getInstance(project);
     final ProjectLevelVcsManager vcsManager = ProjectLevelVcsManager.getInstance(project);
     return ContainerUtil.findAll(roots, file -> vcsManager.getVcsFor(file) == vcs);

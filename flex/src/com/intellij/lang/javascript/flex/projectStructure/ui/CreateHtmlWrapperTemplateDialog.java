@@ -1,4 +1,4 @@
-// Copyright 2000-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.lang.javascript.flex.projectStructure.ui;
 
 import com.intellij.flex.FlexCommonUtils;
@@ -36,7 +36,7 @@ public class CreateHtmlWrapperTemplateDialog extends DialogWrapper {
   private static final String EXPRESS_INSTALL_SWF_MACRO = "${expressInstallSwf}";
 
   private JPanel myMainPanel;
-  private LabeledComponent<TextFieldWithBrowseButton> myWrapperFolderComponent;
+  private LabeledComponentNoThrow<TextFieldWithBrowseButton> myWrapperFolderComponent;
   private JCheckBox myEnableHistoryCheckBox;
   private JCheckBox myCheckPlayerVersionCheckBox;
   private JCheckBox myExpressInstallCheckBox;
@@ -64,8 +64,7 @@ public class CreateHtmlWrapperTemplateDialog extends DialogWrapper {
       }
     });
 
-    myWrapperFolderComponent.getComponent()
-      .addBrowseFolderListener(null, null, module.getProject(), FileChooserDescriptorFactory.createSingleFolderDescriptor());
+    myWrapperFolderComponent.getComponent().addBrowseFolderListener(module.getProject(), FileChooserDescriptorFactory.createSingleFolderDescriptor());
 
     setTitle(getTitleText());
     init();

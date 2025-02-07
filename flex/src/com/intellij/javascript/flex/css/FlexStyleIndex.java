@@ -2,7 +2,7 @@
 package com.intellij.javascript.flex.css;
 
 import com.intellij.javascript.flex.FlexAnnotationNames;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.flex.FlexUtils;
 import com.intellij.lang.javascript.index.JSPackageIndex;
 import com.intellij.lang.javascript.psi.JSFile;
@@ -92,7 +92,7 @@ public final class FlexStyleIndex extends FileBasedIndexExtension<String, Set<Fl
       @Override
       public @NotNull Map<String, Set<FlexStyleIndexInfo>> map(@NotNull FileContent inputData) {
         final Map<String, Set<FlexStyleIndexInfo>> map = new HashMap<>();
-        if (JavaScriptSupportLoader.isFlexMxmFile(inputData.getFileName())) {
+        if (FlexSupportLoader.isFlexMxmFile(inputData.getFileName())) {
           PsiFile file = inputData.getPsiFile();
           VirtualFile virtualFile = inputData.getFile();
           if (file instanceof XmlFile) {
@@ -155,7 +155,7 @@ public final class FlexStyleIndex extends FileBasedIndexExtension<String, Set<Fl
 
   private static @Nullable String readUTF(@NotNull DataInput in) throws IOException {
     String s = IOUtil.readUTF(in);
-    return s.length() == 0 ? null : s;
+    return s.isEmpty() ? null : s;
   }
 
   private static void indexAttributes(PsiElement element, final String classQName, final boolean inClass, final Map<String, Set<FlexStyleIndexInfo>> map) {
@@ -190,7 +190,7 @@ public final class FlexStyleIndex extends FileBasedIndexExtension<String, Set<Fl
   private static @NotNull String getQualifiedNameByMxmlFile(@NotNull VirtualFile file, @NotNull Project project) {
     String name = FileUtilRt.getNameWithoutExtension(file.getName());
     final String packageName = JSResolveUtil.getExpectedPackageNameFromFile(file, project);
-    if (packageName != null && packageName.length() > 0) {
+    if (packageName != null && !packageName.isEmpty()) {
       return packageName + "." + name;
     }
     return name;

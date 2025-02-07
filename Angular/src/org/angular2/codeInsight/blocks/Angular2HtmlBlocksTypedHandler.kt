@@ -4,7 +4,7 @@ package org.angular2.codeInsight.blocks
 import com.intellij.codeInsight.AutoPopupController
 import com.intellij.codeInsight.completion.CompletionType
 import com.intellij.codeInsight.editorActions.TypedHandlerDelegate
-import com.intellij.lang.javascript.JSExtendedLanguagesTokenSetProvider
+import com.intellij.lang.javascript.JSElementTypes
 import com.intellij.lang.javascript.JSTokenTypes
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
@@ -13,8 +13,8 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.util.elementType
 import com.intellij.psi.util.parentOfType
 import com.intellij.psi.xml.XmlDocument
-import com.intellij.psi.xml.XmlElementType
 import com.intellij.psi.xml.XmlText
+import com.intellij.psi.xml.XmlTokenType
 import com.intellij.util.asSafely
 import org.angular2.lang.expr.lexer.Angular2TokenTypes
 import org.angular2.lang.expr.psi.Angular2BlockParameter
@@ -23,7 +23,7 @@ import org.angular2.lang.html.Angular2TemplateSyntax
 import org.angular2.lang.html.lexer.Angular2HtmlTokenTypes
 import org.angular2.lang.html.psi.Angular2HtmlBlock
 
-class Angular2HtmlBlocksTypedHandler : TypedHandlerDelegate() {
+private class Angular2HtmlBlocksTypedHandler : TypedHandlerDelegate() {
 
   override fun checkAutoPopup(charTyped: Char, project: Project, editor: Editor, file: PsiFile): Result {
     if (charTyped == '@' && Angular2TemplateSyntax.of(file)?.enableBlockSyntax == true) {
@@ -31,7 +31,7 @@ class Angular2HtmlBlocksTypedHandler : TypedHandlerDelegate() {
       val at = file.findElementAt(editor.getCaretModel().offset)
       if (at != null &&
           (at.parent.let { it is XmlDocument || it is XmlText }
-           || at.elementType == XmlElementType.XML_END_TAG_START)) {
+           || at.elementType == XmlTokenType.XML_END_TAG_START)) {
         AutoPopupController.getInstance(project)
           .scheduleAutoPopup(editor, CompletionType.BASIC, null)
       }
@@ -53,7 +53,7 @@ class Angular2HtmlBlocksTypedHandler : TypedHandlerDelegate() {
       val offset = editor.caretModel.offset
       if (offset >= 2) {
         val iterator = editor.highlighter.createIterator(offset - 2)
-        while (!iterator.atEnd() && JSExtendedLanguagesTokenSetProvider.WHITE_SPACES.contains(iterator.tokenType)) {
+        while (!iterator.atEnd() && JSElementTypes.WHITE_SPACES.contains(iterator.tokenType)) {
           iterator.retreat()
         }
         if (!iterator.atEnd() && iterator.tokenType == Angular2HtmlTokenTypes.BLOCK_NAME) {
@@ -92,6 +92,8 @@ class Angular2HtmlBlocksTypedHandler : TypedHandlerDelegate() {
       ?.getName() == BLOCK_FOR
 
   private fun afterParameterName(at: PsiElement): Boolean =
-    at.elementType == Angular2TokenTypes.BLOCK_PARAMETER_NAME
+    (at.elementType == Angular2TokenTypes.BLOCK_PARAMETER_NAME
+     || at.elementType == Angular2TokenTypes.BLOCK_PARAMETER_PREFIX
+    ) && at.parent.asSafely<Angular2BlockParameter>()?.definition?.hasContent != false
 
 }

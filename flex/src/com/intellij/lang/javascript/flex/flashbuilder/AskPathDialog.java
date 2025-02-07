@@ -1,11 +1,9 @@
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.lang.javascript.flex.flashbuilder;
 
 import com.intellij.lang.javascript.flex.FlexBundle;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
-import com.intellij.openapi.ui.DialogWrapper;
-import com.intellij.openapi.ui.LabeledComponent;
-import com.intellij.openapi.ui.Messages;
-import com.intellij.openapi.ui.TextFieldWithBrowseButton;
+import com.intellij.openapi.ui.*;
 import com.intellij.openapi.util.io.FileUtil;
 
 import javax.swing.*;
@@ -13,14 +11,14 @@ import java.io.File;
 
 public class AskPathDialog extends DialogWrapper {
   private JPanel myMainPanel;
-  private LabeledComponent<TextFieldWithBrowseButton> myPathComponent;
+  private LabeledComponentNoThrow<TextFieldWithBrowseButton> myPathComponent;
 
   protected AskPathDialog(final String title, final String label, final String initialPath) {
     super(true);
     setTitle(title);
     myPathComponent.setText(label);
     myPathComponent.getComponent().setText(FileUtil.toSystemDependentName(initialPath));
-    myPathComponent.getComponent().addBrowseFolderListener(null, null, null, FileChooserDescriptorFactory.createSingleFolderDescriptor());
+    myPathComponent.getComponent().addBrowseFolderListener(null, FileChooserDescriptorFactory.createSingleFolderDescriptor());
     init();
   }
 

@@ -15,7 +15,7 @@ import org.intellij.plugins.postcss.lexer.PostCssTokenTypes;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class PostCssParser extends CssParser2 {
+public final class PostCssParser extends CssParser2 {
   private boolean myRulesetSeen;
   private boolean myAmpersandAllowed;
   private IElementType myAdditionalIdent;
@@ -323,7 +323,7 @@ public class PostCssParser extends CssParser2 {
     return addIdentOrAmpersandOrError(null);
   }
 
-  private boolean addIdentOrAmpersandOrError(@Nullable final IElementType toCollapse, final IElementType... validTypes) {
+  private boolean addIdentOrAmpersandOrError(final @Nullable IElementType toCollapse, final IElementType... validTypes) {
     if (!isIdentOrAmpersand() && !ArrayUtil.contains(getTokenType(), validTypes)) return super.addIdentOrError();
     PsiBuilder.Marker ident = createCompositeElement();
     addSingleToken();

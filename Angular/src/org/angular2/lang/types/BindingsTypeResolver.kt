@@ -17,10 +17,11 @@ import com.intellij.lang.javascript.psi.types.JSUnionOrIntersectionType.Optimize
 import com.intellij.lang.javascript.psi.types.evaluable.JSApplyCallType
 import com.intellij.lang.javascript.psi.types.guard.TypeScriptTypeRelations
 import com.intellij.lang.javascript.psi.types.typescript.TypeScriptCompilerType
-import com.intellij.lang.typescript.compiler.TypeScriptService
+import com.intellij.lang.typescript.compiler.TypeScriptServiceHolder
 import com.intellij.lang.typescript.resolve.TypeScriptCompilerEvaluationFacade
 import com.intellij.lang.typescript.resolve.TypeScriptGenericTypesEvaluator
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.components.service
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.*
@@ -46,7 +47,7 @@ import org.angular2.lang.expr.service.Angular2TypeScriptService
 import org.angular2.lang.html.parser.Angular2AttributeNameParser
 import org.angular2.lang.html.parser.Angular2AttributeType
 import org.angular2.lang.html.psi.Angular2HtmlTemplateBindings
-import org.angular2.lang.html.tcb.Angular2TranspiledComponentFileBuilder.getTranspiledComponentAndTopLevelTemplateFile
+import org.angular2.lang.expr.service.tcb.Angular2TranspiledDirectiveFileBuilder.getTranspiledDirectiveAndTopLevelSourceFile
 import org.angular2.lang.types.Angular2TypeUtils.possiblyGenericJsType
 import java.util.function.BiFunction
 import java.util.function.Predicate
@@ -64,8 +65,9 @@ internal class BindingsTypeResolver private constructor(
   init {
     val declarationsScope = Angular2DeclarationsScope(element)
     val directives = provider.matched.filter { declarationsScope.contains(it) }
-    val service = if (TypeScriptCompilerEvaluationFacade.getInstance(element.project) != null)
-      TypeScriptService.getForElement(element)?.service
+    val service = if (element.project.service<TypeScriptCompilerEvaluationFacade>().isAnyEnabled())
+      TypeScriptServiceHolder.getForElement(element)?.service
+        ?.takeIf { it.isTypeEvaluationEnabled() }
     else
       null
     analysisResult = when {
@@ -170,6 +172,10 @@ internal class BindingsTypeResolver private constructor(
     JSTypeUtils.applyGenericArguments(jsType, analysisResult?.strictSubstitutors?.get(directive)
                                               ?: analysisResult?.mergedSubstitutor)
 
+  fun getTypeSubstitutorForDocumentation(directive: Angular2Directive?): JSTypeSubstitutor? =
+    analysisResult?.strictSubstitutors?.get(directive)
+    ?: analysisResult?.mergedSubstitutor
+
   private fun postprocessTypes(types: List<JSType?>): JSType? {
     var notNullTypes = types.filterNotNull()
     val source = getTypeSource(element, notNullTypes)
@@ -180,7 +186,7 @@ internal class BindingsTypeResolver private constructor(
         JSTypeUtils.applyGenericArguments(it, mergedSubstitutor)
       }
     }
-    return merge(source, notNullTypes, false)
+    return JSCompositeTypeFactory.optimizeTypeForSubstitute(merge(source, notNullTypes, false), element)
   }
 
   companion object {
@@ -229,7 +235,7 @@ internal class BindingsTypeResolver private constructor(
         CachedValueProvider.Result.create(create(bindings), PsiModificationTracker.MODIFICATION_COUNT)
       }
 
-    fun get(location: PsiElement?) =
+    fun get(location: PsiElement?): BindingsTypeResolver? =
       location
         ?.parentOfTypes(XmlTag::class, Angular2HtmlTemplateBindings::class)
         ?.let {
@@ -328,7 +334,7 @@ internal class BindingsTypeResolver private constructor(
     }
 
     private fun analyzeService(directives: List<Angular2Directive>, element: PsiElement, nameRange: TextRange, service: Angular2TypeScriptService): AnalysisResult? {
-      val (transpiledComponentFile, templateFile) = getTranspiledComponentAndTopLevelTemplateFile(element)
+      val (transpiledComponentFile, templateFile) = getTranspiledDirectiveAndTopLevelSourceFile(element)
                                                     ?: return null
 
       val injectedLanguageManager = InjectedLanguageManager.getInstance(element.project)

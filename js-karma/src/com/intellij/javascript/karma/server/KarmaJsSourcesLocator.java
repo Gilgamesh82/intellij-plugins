@@ -1,78 +1,76 @@
-// Copyright 2000-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 
 package com.intellij.javascript.karma.server;
 
 import com.intellij.execution.ExecutionException;
+import com.intellij.idea.AppMode;
 import com.intellij.javascript.karma.KarmaBundle;
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.util.PathUtil;
+import com.intellij.lang.javascript.psi.util.JSPluginPathManager;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public final class KarmaJsSourcesLocator {
   private static final KarmaJsSourcesLocator INSTANCE = new KarmaJsSourcesLocator();
   private static final String KARMA_INTELLIJ_NAME = "karma-intellij";
   private static final String JS_REPORTER_NAME = "js_reporter";
 
-  private final File myKarmaIntellijPackageDir;
+  private final Path myKarmaIntellijPackageDir;
 
   private KarmaJsSourcesLocator() {
     myKarmaIntellijPackageDir = findKarmaIntellijPackageDir();
   }
 
-  @NotNull
-  public static KarmaJsSourcesLocator getInstance() {
+  public static @NotNull KarmaJsSourcesLocator getInstance() {
     return INSTANCE;
   }
 
   /**
    * @return Bundled 'karma-intellij' directory
    */
-  @NotNull
-  private static File findKarmaIntellijPackageDir() {
-    File jsReporterDir = getBundledJsReporterDir();
-    if (jsReporterDir.isDirectory()) {
-      return new File(jsReporterDir, KARMA_INTELLIJ_NAME);
+  private static @NotNull Path findKarmaIntellijPackageDir() {
+    Path jsReporterDir = getBundledJsReporterDir();
+    if (Files.isDirectory(jsReporterDir)) {
+      return jsReporterDir.resolve(KARMA_INTELLIJ_NAME);
     }
-    throw new RuntimeException("Cannot find bundled karma-intellij in " + jsReporterDir.getAbsolutePath());
+    throw new RuntimeException("Cannot find bundled karma-intellij in " + jsReporterDir);
   }
 
-  private static File getBundledJsReporterDir() {
-    String jarPath = PathUtil.getJarPathForClass(KarmaJsSourcesLocator.class);
-    if (jarPath.endsWith(".jar")) {
-      File jarFile = new File(jarPath);
-      if (!jarFile.isFile()) {
-        throw new RuntimeException("jar file cannot be null");
-      }
-      File pluginBaseDir = jarFile.getParentFile().getParentFile();
-      return new File(pluginBaseDir, JS_REPORTER_NAME);
+  private static @NotNull Path getBundledJsReporterDir() {
+    String relativePathToResources;
+    if (AppMode.isDevServer()) {
+      relativePathToResources = "karma";
     }
-    if (ApplicationManager.getApplication().isInternal()) {
-      String srcDir = jarPath.replace('\\', '/').replace("/out/classes/production/intellij.karma", "/contrib/js-karma/resources");
-      if (new File(srcDir).isDirectory()) {
-        jarPath = srcDir;
-      }
+    else {
+      relativePathToResources = "js-karma/resources";
     }
-    return new File(jarPath, JS_REPORTER_NAME);
+    try {
+      return JSPluginPathManager.getPluginResource(
+        KarmaJsSourcesLocator.class,
+        JS_REPORTER_NAME,
+        relativePathToResources
+      );
+    }
+    catch (IOException e) {
+      throw new RuntimeException("Cannot find bundled karma-intellij in " + relativePathToResources);
+    }
   }
 
-  private File getAppFile(@NotNull String baseName) throws IOException {
-    File file = new File(myKarmaIntellijPackageDir, "lib" + File.separatorChar + baseName);
-    if (!file.isFile()) {
-      throw new IOException("Cannot locate " + file.getAbsolutePath());
+  private @NotNull Path getAppFile(@NotNull String baseName) throws IOException {
+    Path file = myKarmaIntellijPackageDir.resolve("lib").resolve(baseName);
+    if (!Files.isRegularFile(file)) {
+      throw new IOException("Cannot locate " + file);
     }
     return file;
   }
 
-  @NotNull
-  public File getIntellijConfigFile() throws IOException {
+  public @NotNull Path getIntellijConfigFile() throws IOException {
     return getAppFile("intellij.conf.js");
   }
 
-  @NotNull
-  public File getClientAppFile() throws ExecutionException {
+  public @NotNull Path getClientAppFile() throws ExecutionException {
     try {
       return getAppFile("intellijRunner.js");
     }
@@ -81,8 +79,7 @@ public final class KarmaJsSourcesLocator {
     }
   }
 
-  @NotNull
-  public File getKarmaIntellijPackageDir() {
+  public @NotNull Path getKarmaIntellijPackageDir() {
     return myKarmaIntellijPackageDir;
   }
 }

@@ -1,4 +1,4 @@
-// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.lang.javascript.validation.fixes;
 
 import com.intellij.codeInsight.FileModificationService;
@@ -7,9 +7,9 @@ import com.intellij.lang.ASTNode;
 import com.intellij.lang.javascript.DialectDetector;
 import com.intellij.lang.javascript.JSTokenTypes;
 import com.intellij.lang.javascript.JavaScriptBundle;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lang.javascript.flex.ECMAScriptImportOptimizer;
 import com.intellij.lang.javascript.flex.FlexBundle;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.flex.ImportUtils;
 import com.intellij.lang.javascript.psi.*;
 import com.intellij.lang.javascript.psi.ecmal4.JSAttributeList;
@@ -115,7 +115,7 @@ public final class ActionScriptCreateConstructorFix extends CreateJSFunctionInte
     }
     else {
       String text = "function " + jsClass.getName() + "(){}";
-      JSFunction fakeFunction = (JSFunction)JSChangeUtil.createStatementFromText(project, text, JavaScriptSupportLoader.ECMA_SCRIPT_L4)
+      JSFunction fakeFunction = (JSFunction)JSChangeUtil.createStatementFromText(project, text, FlexSupportLoader.ECMA_SCRIPT_L4)
         .getPsi();
 
       new JSChangeSignatureFix(fakeFunction, node.getArgumentList()) {
@@ -341,7 +341,7 @@ public final class ActionScriptCreateConstructorFix extends CreateJSFunctionInte
         jsClass));
       newConstuctorText.append("{}");
       JSFunction constructorPrototype = (JSFunction)JSChangeUtil.createStatementFromText(myProject, newConstuctorText.toString(),
-                                                                                 JavaScriptSupportLoader.ECMA_SCRIPT_L4).getPsi();
+                                                                                         FlexSupportLoader.ECMA_SCRIPT_L4).getPsi();
       PsiElement newConstuctor = jsClass.add(constructorPrototype); // TODO anchor
       FormatFixer.create(newConstuctor, FormatFixer.Mode.Reformat).fixFormat();
       if (!toImport.isEmpty()) {

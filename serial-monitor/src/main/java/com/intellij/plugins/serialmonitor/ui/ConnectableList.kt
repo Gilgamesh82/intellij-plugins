@@ -1,12 +1,7 @@
 package com.intellij.plugins.serialmonitor.ui
 
 import com.intellij.icons.AllIcons
-import com.intellij.openapi.actionSystem.ActionGroup
-import com.intellij.openapi.actionSystem.ActionPlaces
-import com.intellij.openapi.actionSystem.ActionUpdateThread
-import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.Separator
+import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.ui.MessageDialogBuilder
@@ -29,9 +24,7 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.*
 
-class ConnectableList(val parent: ConnectPanel) : JBList<Any>() {
-
-
+internal class ConnectableList(val parent: ConnectPanel) : JBList<Any>() {
   abstract inner class Connectable(@NlsSafe val entityName: String, @Volatile var status: PortStatus) {
 
     abstract val selectionKey: Any
@@ -200,11 +193,17 @@ class ConnectableList(val parent: ConnectPanel) : JBList<Any>() {
       }
 
       override fun setSelectionInterval(index0: Int, index1: Int) {
-        if (index0 >= 0 && model.getElementAt(index0) is Connectable) {
-          super.setSelectionInterval(index0, index0)
-        }
-        else {
-          clearSelection()
+        var newIndex = index1 // according to documentation, index1 is used for the single selection mode
+        val delta = if (newIndex < selectedIndex) -1 else 1
+
+        // Skips over fake string labels and selects the first Connectable in the selected direction from the current element
+        while (newIndex >= 0 && newIndex < model.size) {
+          val element = model.getElementAt(newIndex)
+          if (element is Connectable) {
+            super.setSelectionInterval(newIndex, newIndex)
+            break
+          }
+          newIndex += delta
         }
       }
     }

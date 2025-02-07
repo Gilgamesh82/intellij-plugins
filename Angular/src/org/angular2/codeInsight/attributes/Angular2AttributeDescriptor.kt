@@ -11,15 +11,22 @@ import com.intellij.webSymbols.SymbolKind
 import com.intellij.webSymbols.SymbolNamespace
 import com.intellij.webSymbols.WebSymbol
 import com.intellij.webSymbols.WebSymbolOrigin
-import org.angular2.Angular2Framework
 import org.angular2.entities.Angular2Directive
 import org.angular2.lang.html.parser.Angular2AttributeNameParser
 import org.angular2.lang.html.psi.Angular2HtmlBoundAttribute
 import org.angular2.web.Angular2DescriptorSymbolsProvider
+import org.angular2.web.Angular2SymbolOrigin
 
 class Angular2AttributeDescriptor(info: WebSymbolHtmlAttributeInfo, tag: XmlTag?)
   : WebSymbolAttributeDescriptor(info, tag) {
 
+  /**
+   * Represents most of the matched directives, even these out-of-scopes. Some directives
+   * might be filtered out though, if there is a better match. This property should not
+   * be used where perfect matching is required.
+   *
+   * Prefer to use [Angular2ApplicableDirectivesProvider] and [org.angular2.codeInsight.Angular2DeclarationsScope]
+   */
   val sourceDirectives: List<Angular2Directive> get() = bindingInfoProvider.directives
 
   @get:JvmName("hasErrorSymbols")
@@ -40,13 +47,15 @@ class Angular2AttributeDescriptor(info: WebSymbolHtmlAttributeInfo, tag: XmlTag?
   companion object {
     @JvmStatic
     @Deprecated(message = "Deprecated, returns fake descriptor. Use web-types or Web Symbols instead")
-    fun create(tag: XmlTag,
-               attributeName: String,
-               @Suppress("UNUSED_PARAMETER")
-               element: PsiElement): Angular2AttributeDescriptor {
+    fun create(
+      tag: XmlTag,
+      attributeName: String,
+      @Suppress("UNUSED_PARAMETER")
+      element: PsiElement,
+    ): Angular2AttributeDescriptor {
       val symbol = object : WebSymbol {
         override val origin: WebSymbolOrigin
-          get() = WebSymbolOrigin.create(Angular2Framework.ID)
+          get() = Angular2SymbolOrigin.empty
         override val namespace: SymbolNamespace
           get() = WebSymbol.NAMESPACE_HTML
         override val kind: SymbolKind

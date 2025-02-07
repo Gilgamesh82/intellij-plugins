@@ -1,4 +1,4 @@
-// Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+// Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
 package com.intellij.javascript.flex;
 
 import com.intellij.codeInsight.FileModificationService;
@@ -7,14 +7,15 @@ import com.intellij.codeInspection.LocalQuickFixProvider;
 import com.intellij.javascript.flex.css.CssClassValueReference;
 import com.intellij.javascript.flex.css.FlexCssUtil;
 import com.intellij.javascript.flex.resolve.FlexResolveHelper;
-import com.intellij.lang.javascript.JavaScriptSupportLoader;
 import com.intellij.lang.javascript.flex.FlexModuleType;
+import com.intellij.lang.javascript.flex.FlexSupportLoader;
 import com.intellij.lang.javascript.flex.ReferenceSupport;
 import com.intellij.lang.javascript.flex.actions.newfile.CreateFlexComponentFix;
 import com.intellij.lang.javascript.psi.ecmal4.impl.ActionScriptReferenceSet;
 import com.intellij.lang.javascript.validation.fixes.ActionScriptCreateClassOrInterfaceFix;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleType;
+import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.patterns.PlatformPatterns;
 import com.intellij.psi.*;
@@ -27,11 +28,7 @@ import com.intellij.util.ProcessingContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import static com.intellij.openapi.module.ModuleUtilCore.findModuleForPsiElement;
-
-public final class FlexCssReferenceContributor extends PsiReferenceContributor {
-
-
+final class FlexCssReferenceContributor extends PsiReferenceContributor {
   @Override
   public void registerReferenceProviders(final @NotNull PsiReferenceRegistrar registrar) {
     registrar.registerReferenceProvider(PlatformPatterns.psiElement(CssString.class).and(new FilterPattern(new ElementFilter() {
@@ -104,10 +101,10 @@ public final class FlexCssReferenceContributor extends PsiReferenceContributor {
                 PsiFile file = cssDeclaration.getContainingFile();
                 if (file != null) {
                   if (file.getFileType() == CssFileType.INSTANCE) {
-                    Module module = findModuleForPsiElement(cssDeclaration);
+                    Module module = ModuleUtilCore.findModuleForPsiElement(cssDeclaration);
                     return module != null && ModuleType.get(module) == FlexModuleType.getInstance();
                   }
-                  return JavaScriptSupportLoader.isFlexMxmFile(file);
+                  return FlexSupportLoader.isFlexMxmFile(file);
                 }
               }
             }
@@ -124,7 +121,7 @@ public final class FlexCssReferenceContributor extends PsiReferenceContributor {
       @Override
       public PsiReference @NotNull [] getReferencesByElement(@NotNull PsiElement element, @NotNull ProcessingContext context) {
         String styleName = CssClassValueReference.getValue(element);
-        if (styleName.length() > 0) {
+        if (!styleName.isEmpty()) {
           return new PsiReference[]{new CssClassValueReference(element)};
         }
         return PsiReference.EMPTY_ARRAY;
